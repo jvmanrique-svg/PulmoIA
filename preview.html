@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pulmo - Control Respiratorio y Asma</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel Standalone para JSX en el navegador -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: '#F8F9FA',
+            surface: '#FFFFFF',
+            primary: {
+              DEFAULT: '#0284c7',
+              dark: '#0369a1',
+              light: '#e0f2fe'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input[type=range] {
+      accent-color: #0284c7;
+    }
+  </style>
+</head>
+<body class="bg-[#F8F9FA] text-slate-800 antialiased min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- BASE DE DATOS LOCAL (IndexedDB + Fallback LocalStorage) ---
+    const DB_NAME = 'PulmoAppDB';
+    const STORE_NAME = 'symptom_logs';
+
+    function initDB() {
+      return new Promise((resolve) => {
+        if (!('indexedDB' in window)) return resolve(null);
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    async function saveLogToDB(log) {
+      try {
+        const db = await initDB();
+        if (db) {
+          const tx = db.transaction([STORE_NAME], 'readwrite');
+          tx.objectStore(STORE_NAME).put(log);
+        }
+      } catch (err) {
+        console.warn('DB error, usando localStorage', err);
+      }
+      try {
+        const existing = JSON.parse(localStorage.getItem('pulmo_logs') || '[]');
+        localStorage.setItem('pulmo_logs', JSON.stringify([log, ...existing.filter(i => i.id !== log.id)]));
+      } catch(e) {}
+    }
+
+    // --- DATOS MOCK INICIALES ---
+    const INITIAL_PATIENT = {
+      name: 'Elena Morales',
+      age: 28,
+      asthmaType: 'Asma Alérgica Moderada',
+      baselinePEF: 480,
+      doctorContact: { name: 'Dra. Sofía Valenzuela', specialty: 'Neumonología', phone: '+54 9 11 5566-7788' },
+      emergencyContact: { name: 'Carlos Morales (Hermano)', phone: '+54 9 11 4521-8899' },
+      medications: [
+        { name: 'Budesonida / Formoterol', type: 'Control diario', dose: '1 inh. cada 12h' },
+        { name: 'Salbutamol (Ventolin)', type: 'Rescate', dose: '2 pulsaciones según necesidad' }
+      ]
+    };
+
+    const INITIAL_LOGS = [
+      {
+        id: 'log-1',
+        timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
+        pef: 460,
+        zone: 'green',
+        severity: 'none',
+        symptoms: [],
+        triggers: ['Aire libre'],
+        rescuePuffs: 0,
+        notes: 'Respiración limpia y controlada tras el ejercicio matutino.'
+      },
+      {
+        id: 'log-2',
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        pef: 380,
+        zone: 'yellow',
+        severity: 'mild',
+        symptoms: ['Tos persistente', 'Opresión en el pecho'],
+        triggers: ['Polvo / Ácaros'],
+        rescuePuffs: 1,
+        notes: 'Molestia leve durante la limpieza del hogar.'
+      }
+    ];
+
+    // Helper cálculo de zona
+    function getZone(pef, baseline = 480) {
+      const ratio = pef / baseline;
+      if (ratio >= 0.8) return 'green';
+      if (ratio >= 0.5) return 'yellow';
+      return 'red';
+    }
+
+    // --- APLICACIÓN PRINCIPAL ---
+    function App() {
+      const [activeTab, setActiveTab] = useState('inicio');
+      const [patient] = useState(INITIAL_PATIENT);
+      const [logs, setLogs] = useState(() => {
+        try {
+          const saved = localStorage.getItem('pulmo_logs');
+          return saved ? JSON.parse(saved) : INITIAL_LOGS;
+        } catch { return INITIAL_LOGS; }
+      });
+
+      // Modales
+      const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
+      const [isBreathingOpen, setIsBreathingOpen] = useState(false);
+      const [isReportOpen, setIsReportOpen] = useState(false);
+      const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+      const handleSaveLog = (newLog) => {
+        setLogs(prev => [newLog, ...prev]);
+        saveLogToDB(newLog);
+      };
+
+      const handleDeleteLog = (id) => {
+        if (confirm('¿Eliminar este registro de la base de datos?')) {
+          setLogs(prev => {
+            const updated = prev.filter(l => l.id !== id);
+            localStorage.setItem('pulmo_logs', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between max-w-md mx-auto bg-white shadow-2xl relative">
+          {/* Header Superior */}
+          <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 h-16 flex items-center justify-between">
+            <button onClick={() => setActiveTab('inicio')} className="flex items-center gap-2.5 text-left">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-500 text-white flex items-center justify-center font-black shadow-md shadow-sky-500/20">
+                P
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-slate-900 text-base">Pulmo</span>
+                  <span className="text-[10px] bg-sky-100 text-sky-800 font-bold px-1.5 py-0.2 rounded-full">v2.0</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">Asistente Respiratorio</p>
+              </div>
+            </button>
+
+            <button 
+              onClick={() => setIsProfileOpen(true)}
+              className="flex items-center gap-2 py-1 px-2.5 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors"
+            >
+              <div className="w-6 h-6 rounded-full bg-sky-600 text-white text-xs font-bold flex items-center justify-center">
+                E
+              </div>
+              <span className="text-xs font-semibold text-slate-700">Elena</span>
+            </button>
+          </header>
+
+          {/* Área Principal de Contenido */}
+          <main className="flex-1 px-4 py-5 pb-24 overflow-y-auto">
+            {activeTab === 'inicio' && (
+              <HomeScreen 
+                patient={patient} 
+                logs={logs} 
+                onNavigate={setActiveTab}
+                onOpenEmergency={() => setIsEmergencyOpen(true)}
+                onOpenBreathing={() => setIsBreathingOpen(true)}
+              />
+            )}
+
+            {activeTab === 'registrar' && (
+              <RegisterScreen 
+                baselinePEF={patient.baselinePEF}
+                onSaveLog={handleSaveLog}
+                onNavigate={setActiveTab}
+              />
+            )}
+
+            {activeTab === 'historial' && (
+              <HistoryScreen 
+                logs={logs} 
+                onDeleteLog={handleDeleteLog}
+                onOpenReport={() => setIsReportOpen(true)}
+                onNavigate={setActiveTab}
+              />
+            )}
+
+            {activeTab === 'educacion' && (
+              <EducationScreen 
+                onOpenBreathing={() => setIsBreathingOpen(true)}
+                onOpenReport={() => setIsReportOpen(true)}
+              />
+            )}
+          </main>
+
+          {/* Navegación Inferior Fija */}
+          <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/80 max-w-md mx-auto">
+            <div className="flex items-center justify-around h-16 px-2">
+              {[
+                { id: 'inicio', label: 'Inicio', icon: '🏠' },
+                { id: 'registrar', label: 'Registrar', icon: '➕', isMain: true },
+                { id: 'historial', label: 'Historial', icon: '📋' },
+                { id: 'educacion', label: 'Aprender', icon: '📖' },
+              ].map(tab => (
+                tab.isMain ? (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="relative -top-3 flex flex-col items-center"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center text-xl shadow-lg shadow-sky-600/40 active:scale-95 transition-all">
+                      {tab.icon}
+                    </div>
+                    <span className="text-[10px] mt-1 font-bold text-sky-700">{tab.label}</span>
+                  </button>
+                ) : (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex flex-col items-center py-1 px-3 rounded-xl transition-all ${
+                      activeTab === tab.id ? 'text-sky-600 font-bold scale-105' : 'text-slate-400 hover:text-slate-600 font-medium'
+                    }`}
+                  >
+                    <span className="text-lg">{tab.icon}</span>
+                    <span className="text-[10px]">{tab.label}</span>
+                  </button>
+                )
+              ))}
+            </div>
+          </nav>
+
+          {/* Modales */}
+          <EmergencyModal isOpen={isEmergencyOpen} onClose={() => setIsEmergencyOpen(false)} />
+          <BreathingModal isOpen={isBreathingOpen} onClose={() => setIsBreathingOpen(false)} />
+          <DoctorReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} patient={patient} logs={logs} />
+          <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} patient={patient} onOpenEmergency={() => setIsEmergencyOpen(true)} />
+        </div>
+      );
+    }
+
+    // --- COMPONENTE: HOME SCREEN ---
+    function HomeScreen({ patient, logs, onNavigate, onOpenEmergency, onOpenBreathing }) {
+      const latest = logs[0];
+      const pef = latest ? latest.pef : patient.baselinePEF;
+      const zone = latest ? latest.zone : 'green';
+
+      const zoneBadge = {
+        green: { label: 'Zona Verde - Óptimo', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500' },
+        yellow: { label: 'Zona Amarilla - Precaución', bg: 'bg-amber-50 text-amber-800 border-amber-200', dot: 'bg-amber-500' },
+        red: { label: 'Zona Roja - Crisis', bg: 'bg-rose-50 text-rose-800 border-rose-200', dot: 'bg-rose-500' },
+      }[zone];
+
+      return (
+        <div className="space-y-5 animate-fade-in">
+          {/* Card Semáforo Principal */}
+          <section className="bg-gradient-to-br from-white to-sky-50/70 rounded-3xl p-5 border border-sky-100 shadow-sm">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-sky-700">Estado Clínico</span>
+                <h2 className="text-xl font-black text-slate-800">Hola, {patient.name.split(' ')[0]} 👋</h2>
+              </div>
+              <div className={`px-2.5 py-1 rounded-full border text-[11px] font-bold flex items-center gap-1.5 ${zoneBadge.bg}`}>
+                <span className={`w-2 h-2 rounded-full ${zoneBadge.dot}`} />
+                <span>{zoneBadge.label.split(' - ')[1]}</span>
+              </div>
+            </div>
+
+            <div className="flex items-baseline gap-2 my-3">
+              <span className="text-4xl font-extrabold text-slate-900 tracking-tight">{pef}</span>
+              <span className="text-sm font-semibold text-slate-500">L/min (PEF actual)</span>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-4">
+              Valor personal óptimo: <strong>{patient.baselinePEF} L/min</strong> ({Math.round((pef / patient.baselinePEF) * 100)}%)
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => onNavigate('registrar')}
+                className="py-3 px-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              >
+                <span>➕ Nuevo Registro</span>
+              </button>
+              <button
+                onClick={onOpenBreathing}
+                className="py-3 px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              >
+                <span>🫁 Ejercicio 4-7-8</span>
+              </button>
+            </div>
+          </section>
+
+          {/* Botón de Emergencia Inmediata */}
+          <button
+            onClick={onOpenEmergency}
+            className="w-full bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-800 p-4 rounded-2xl flex items-center justify-between transition-colors shadow-sm text-left active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg shadow-md shadow-rose-600/30">
+                🚨
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-rose-900">Plan de Crisis y Emergencia</h3>
+                <p className="text-[11px] text-rose-700">Protocolo de rescate 1-2-3 y llamada al 911</p>
+              </div>
+            </div>
+            <span className="text-rose-400 font-bold">➔</span>
+          </button>
+
+          {/* Calidad del Aire y Clima */}
+          <section className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Ambiente (Ciudad)</span>
+              <span className="bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full">ICA 38 - Excelente</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-2.5 bg-slate-50 rounded-xl">
+                <span className="text-sm">🌡️</span>
+                <p className="text-[10px] text-slate-500 mt-1">Temp</p>
+                <p className="font-bold text-xs text-slate-800">22°C</p>
+              </div>
+              <div className="p-2.5 bg-slate-50 rounded-xl">
+                <span className="text-sm">💧</span>
+                <p className="text-[10px] text-slate-500 mt-1">Humedad</p>
+                <p className="font-bold text-xs text-slate-800">58%</p>
+              </div>
+              <div className="p-2.5 bg-slate-50 rounded-xl">
+                <span className="text-sm">🌿</span>
+                <p className="text-[10px] text-slate-500 mt-1">Polen</p>
+                <p className="font-bold text-xs text-slate-800">Bajo</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      );
+    }
+
+    // --- COMPONENTE: FORMULARIO DE REGISTRO CLÍNICO CON ALERTA ---
+    function RegisterScreen({ baselinePEF, onSaveLog, onNavigate }) {
+      const [pef, setPef] = useState(440);
+      const [severity, setSeverity] = useState('none');
+      const [symptoms, setSymptoms] = useState([]);
+      const [triggers, setTriggers] = useState([]);
+      const [rescuePuffs, setRescuePuffs] = useState(0);
+      const [medTaken, setMedTaken] = useState(true);
+      const [notes, setNotes] = useState('');
+
+      const [showModal, setShowModal] = useState(false);
+      const [savedRecord, setSavedRecord] = useState(null);
+
+      const zone = getZone(pef, baselinePEF);
+
+      const zoneConfig = {
+        green: { name: 'Zona Verde (≥ 80%)', desc: 'Vías aéreas despejadas. Control óptimo.', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+        yellow: { name: 'Zona Amarilla (50-79%)', desc: 'Precaución. Inicia posible estrechamiento.', bg: 'bg-amber-50 text-amber-800 border-amber-200' },
+        red: { name: 'Zona Roja (< 50%)', desc: 'Alerta médica. Aplica medicación de rescate.', bg: 'bg-rose-50 text-rose-800 border-rose-200' },
+      }[zone];
+
+      const toggleItem = (list, setList, item) => {
+        setList(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const record = {
+          id: 'log-' + Date.now(),
+          timestamp: new Date().toISOString(),
+          pef,
+          zone,
+          severity,
+          symptoms,
+          triggers,
+          rescuePuffs,
+          medTaken,
+          notes: notes.trim() || undefined
+        };
+
+        onSaveLog(record);
+        setSavedRecord(record);
+        setShowModal(true);
+      };
+
+      return (
+        <div className="space-y-5 animate-fade-in">
+          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-lg font-bold">
+              📝
+            </div>
+            <div>
+              <h1 className="text-lg font-black text-slate-800">Nuevo Registro de Salud</h1>
+              <p className="text-xs text-slate-500">Captura de PEF, síntomas y medicación</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Medición PEF */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-sm text-slate-800">Flujo Espiratorio Máximo (PEF)</span>
+                <span className="text-2xl font-black text-sky-700">{pef} <span className="text-xs font-normal text-slate-400">L/min</span></span>
+              </div>
+
+              <div className={`p-3 rounded-xl border text-xs ${zoneConfig.bg}`}>
+                <p className="font-bold">{zoneConfig.name}</p>
+                <p className="opacity-90">{zoneConfig.desc}</p>
+              </div>
+
+              <input
+                type="range"
+                min="100"
+                max="700"
+                step="5"
+                value={pef}
+                onChange={e => setPef(Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 rounded-lg cursor-pointer"
+              />
+
+              <div className="flex justify-between items-center text-xs text-slate-400">
+                <span>100 L/min</span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setPef(v => Math.max(100, v - 10))} className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs">-10</button>
+                  <button type="button" onClick={() => setPef(v => Math.min(700, v + 10))} className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs">+10</button>
+                </div>
+                <span>700 L/min</span>
+              </div>
+            </div>
+
+            {/* Severidad */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-2">
+              <label className="font-bold text-sm text-slate-800 block">Severidad de los síntomas hoy</label>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {[
+                  { id: 'none', label: 'Sin síntomas' },
+                  { id: 'mild', label: 'Leve (Actividad normal)' },
+                  { id: 'moderate', label: 'Moderada (Molestia)' },
+                  { id: 'severe', label: 'Severa (Interfiere reposo)' },
+                ].map(item => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    onClick={() => setSeverity(item.id)}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      severity === item.id ? 'border-sky-600 bg-sky-50 text-sky-800 font-bold' : 'border-slate-100 hover:border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Síntomas marcables */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-2">
+              <label className="font-bold text-sm text-slate-800 block">Síntomas experimentados</label>
+              <div className="flex flex-wrap gap-1.5">
+                {['Tos seca', 'Sibilancias (silbidos)', 'Falta de aire', 'Opresión en el pecho', 'Despertar nocturno'].map(s => (
+                  <button
+                    type="button"
+                    key={s}
+                    onClick={() => toggleItem(symptoms, setSymptoms, s)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      symptoms.includes(s) ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Medicación de Rescate */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex justify-between items-center">
+              <div>
+                <p className="font-bold text-xs text-slate-800">Inhalaciones de Salbutamol (Rescate)</p>
+                <p className="text-[11px] text-slate-500">¿Cuántos puffs utilizaste?</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setRescuePuffs(v => Math.max(0, v - 1))} className="w-8 h-8 rounded-lg bg-slate-100 font-bold text-slate-700">-</button>
+                <span className="w-6 text-center font-bold text-sm">{rescuePuffs}</span>
+                <button type="button" onClick={() => setRescuePuffs(v => v + 1)} className="w-8 h-8 rounded-lg bg-slate-100 font-bold text-slate-700">+</button>
+              </div>
+            </div>
+
+            {/* Notas */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-1.5">
+              <label className="font-bold text-xs text-slate-700 block">Observaciones adicionales</label>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Sensaciones, actividad física previa, etc."
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/30 h-16 resize-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl text-sm shadow-lg shadow-sky-600/30 active:scale-[0.99] transition-all"
+            >
+              💾 Guardar en Base de Datos Local
+            </button>
+          </form>
+
+          {/* Modal / Alerta de Confirmación */}
+          {showModal && savedRecord && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 animate-scale-up">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto">
+                  ✅
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">¡Registro Guardado con Éxito!</h3>
+                  <p className="text-xs text-slate-500 mt-1">Los datos se guardaron en la base de datos local (IndexedDB + Storage).</p>
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-3 text-xs space-y-1.5 text-left border border-slate-100">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Valor PEF:</span>
+                    <strong className="text-slate-800">{savedRecord.pef} L/min</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Zona Semáforo:</span>
+                    <strong className={savedRecord.zone === 'green' ? 'text-emerald-600' : savedRecord.zone === 'yellow' ? 'text-amber-600' : 'text-rose-600'}>
+                      Zona {savedRecord.zone.toUpperCase()}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Puffs de rescate:</span>
+                    <strong>{savedRecord.rescuePuffs}</strong>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <button
+                    onClick={() => { setShowModal(false); onNavigate('historial'); }}
+                    className="w-full py-3 bg-sky-600 text-white font-bold rounded-xl text-xs hover:bg-sky-700"
+                  >
+                    Ver en Historial Clínico
+                  </button>
+                  <button
+                    onClick={() => { setShowModal(false); onNavigate('inicio'); }}
+                    className="w-full py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-200"
+                  >
+                    Volver al Inicio
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- COMPONENTE: HISTORIAL SCREEN ---
+    function HistoryScreen({ logs, onDeleteLog, onOpenReport, onNavigate }) {
+      return (
+        <div className="space-y-4 animate-fade-in">
+          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-black text-slate-800">Historial Clínico</h1>
+              <p className="text-xs text-slate-500">{logs.length} registros guardados</p>
+            </div>
+            <button
+              onClick={onOpenReport}
+              className="py-2 px-3 bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold rounded-xl text-xs flex items-center gap-1.5"
+            >
+              📄 Informe Médico
+            </button>
+          </div>
+
+          {logs.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-2xl border border-slate-100 text-slate-400 text-xs">
+              No hay registros aún. Crea tu primer registro desde la pestaña "Registrar".
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {logs.map(log => {
+                const date = new Date(log.timestamp).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                const zoneColor = log.zone === 'green' ? 'border-l-emerald-500' : log.zone === 'yellow' ? 'border-l-amber-500' : 'border-l-rose-500';
+
+                return (
+                  <div key={log.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm border-l-4 ${zoneColor}`}>
+                    <div className="flex justify-between items-start mb-1 text-xs text-slate-400">
+                      <span>📅 {date}</span>
+                      <button onClick={() => onDeleteLog(log.id)} className="text-slate-300 hover:text-rose-500">🗑️</button>
+                    </div>
+                    <div className="flex justify-between items-baseline mb-2">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black text-slate-900">{log.pef}</span>
+                        <span className="text-xs text-slate-500">L/min</span>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                        log.zone === 'green' ? 'bg-emerald-50 text-emerald-700' : log.zone === 'yellow' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
+                      }`}>
+                        Zona {log.zone}
+                      </span>
+                    </div>
+                    {log.symptoms && log.symptoms.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {log.symptoms.map((s, idx) => (
+                          <span key={idx} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{s}</span>
+                        ))}
+                      </div>
+                    )}
+                    {log.notes && <p className="text-xs italic text-slate-500 pt-1 border-t border-slate-50">{log.notes}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- COMPONENTE: EDUCACIÓN ---
+    function EducationScreen({ onOpenBreathing, onOpenReport }) {
+      return (
+        <div className="space-y-4 animate-fade-in">
+          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+            <h1 className="text-lg font-black text-slate-800">Educación y Guías</h1>
+            <p className="text-xs text-slate-500">Técnicas clínicas recomendadas</p>
+          </div>
+
+          <div className="bg-gradient-to-r from-teal-500 to-sky-600 rounded-3xl p-5 text-white shadow-md">
+            <h3 className="font-bold text-sm mb-1">Técnica de Respiración 4-7-8</h3>
+            <p className="text-xs text-sky-100 mb-3">Reduce la tensión torácica y calma el sistema nervioso ante broncoespasmo.</p>
+            <button onClick={onOpenBreathing} className="py-2.5 px-4 bg-white text-teal-800 font-bold rounded-xl text-xs">
+              Iniciar Ejercicio
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-2 text-xs">
+            <h3 className="font-bold text-slate-800 text-sm">Regla de Oro: Inhalador en 3 Pasos</h3>
+            <ol className="list-decimal list-inside space-y-1 text-slate-600">
+              <li>Exhala todo el aire de tus pulmones antes de aplicar.</li>
+              <li>Inhala lento y profundo mientras accionas el dispositivo.</li>
+              <li>Mantén el aire por 10 segundos antes de exhalar.</li>
+            </ol>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MODAL DE EMERGENCIA ---
+    function EmergencyModal({ isOpen, onClose }) {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 bg-rose-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-rose-500 space-y-4">
+            <div className="flex justify-between items-center text-rose-600">
+              <h3 className="font-black text-base flex items-center gap-1.5">🚨 Protocolo de Crisis</h3>
+              <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+            </div>
+            <div className="bg-rose-50 p-3 rounded-xl text-xs text-rose-800 space-y-1">
+              <p className="font-bold">1. Siéntate erguido (no te acuestes).</p>
+              <p className="font-bold">2. Aplica 2 a 4 pulsaciones de Salbutamol con espaciador.</p>
+              <p className="font-bold">3. Espera 5 minutos. Si no cede, repite.</p>
+              <p className="font-bold">4. Si persiste la opresión: Llama a emergencias.</p>
+            </div>
+            <a href="tel:911" className="block text-center py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-sm shadow-md shadow-rose-600/30">
+              📞 Llamar a Emergencias (911 / 107)
+            </a>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MODAL RESPIRACIÓN GUIADA 4-7-8 ---
+    function BreathingModal({ isOpen, onClose }) {
+      const [active, setActive] = useState(false);
+      const [phase, setPhase] = useState('Inhala');
+      const [timer, setTimer] = useState(4);
+
+      useEffect(() => {
+        if (!isOpen) { setActive(false); return; }
+        if (!active) return;
+        const interval = setInterval(() => {
+          setTimer(t => {
+            if (t > 1) return t - 1;
+            if (phase === 'Inhala') { setPhase('Sostén'); return 7; }
+            if (phase === 'Sostén') { setPhase('Exhala'); return 8; }
+            setPhase('Inhala'); return 4;
+          });
+        }, 1000);
+        return () => clearInterval(interval);
+      }, [isOpen, active, phase]);
+
+      if (!isOpen) return null;
+
+      return (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-5">
+            <div className="flex justify-between items-center text-slate-800">
+              <h3 className="font-bold text-sm">Respiración 4-7-8</h3>
+              <button onClick={onClose} className="text-slate-400">✕</button>
+            </div>
+            <div className="my-6">
+              <div className="w-32 h-32 rounded-full bg-teal-500 text-white flex items-center justify-center text-4xl font-black mx-auto shadow-xl transition-all duration-700">
+                {active ? timer : '4-7-8'}
+              </div>
+              <p className="font-bold text-teal-800 text-sm mt-3">{active ? phase : 'Presiona Iniciar'}</p>
+            </div>
+            <button onClick={() => setActive(!active)} className="w-full py-3 bg-teal-600 text-white font-bold rounded-xl text-xs">
+              {active ? 'Pausar' : 'Iniciar'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MODAL REPORTE MÉDICO ---
+    function DoctorReportModal({ isOpen, onClose, patient, logs }) {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h3 className="font-bold text-sm">Informe Clínico para Consulta</h3>
+              <button onClick={onClose} className="text-slate-400">✕</button>
+            </div>
+            <div className="text-xs space-y-2 text-slate-600">
+              <p><strong>Paciente:</strong> {patient.name} ({patient.age} años)</p>
+              <p><strong>Diagnóstico:</strong> {patient.asthmaType}</p>
+              <p><strong>PEF Óptimo:</strong> {patient.baselinePEF} L/min</p>
+              <p><strong>Total Registros:</strong> {logs.length} mediciones guardadas en BD local.</p>
+            </div>
+            <button onClick={() => window.print()} className="w-full py-3 bg-sky-600 text-white font-bold rounded-xl text-xs">
+              🖨️ Imprimir / Guardar en PDF
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MODAL PERFIL ---
+    function ProfileModal({ isOpen, onClose, patient, onOpenEmergency }) {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h3 className="font-bold text-sm">Perfil del Paciente</h3>
+              <button onClick={onClose} className="text-slate-400">✕</button>
+            </div>
+            <div className="text-center space-y-1">
+              <div className="w-14 h-14 bg-sky-600 text-white text-xl font-black rounded-full flex items-center justify-center mx-auto">E</div>
+              <h4 className="font-bold text-slate-800">{patient.name}</h4>
+              <p className="text-xs text-slate-500">{patient.asthmaType}</p>
+            </div>
+            <div className="text-xs bg-slate-50 p-3 rounded-xl space-y-1">
+              <p><strong>Médico:</strong> {patient.doctorContact.name}</p>
+              <p><strong>Contacto Emergencia:</strong> {patient.emergencyContact.name}</p>
+            </div>
+            <button onClick={() => { onClose(); onOpenEmergency(); }} className="w-full py-2.5 bg-rose-50 text-rose-700 font-bold rounded-xl text-xs">
+              Ver Plan de Emergencia
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
