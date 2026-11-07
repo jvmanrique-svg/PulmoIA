@@ -6,8 +6,6 @@ import {
   Wind, 
   Layers, 
   Calendar, 
-  AlertCircle,
-  HelpCircle,
   Activity
 } from 'lucide-react';
 
@@ -24,7 +22,6 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
   const [rangeFilter, setRangeFilter] = useState<RangeFilter>('7d');
   const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
 
-  // Filter logs by range and ensure chronological order (oldest to newest for charts)
   const sortedLogs = [...logs].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
@@ -37,12 +34,11 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
     (l) => rangeFilter === 'all' || new Date(l.timestamp).getTime() >= cutoffTime
   );
 
-  // If no logs, or only 1, display fallback
   if (filteredLogs.length === 0) {
     return (
-      <div className="bg-white rounded-3xl p-6 border border-slate-100 text-center space-y-2">
-        <Activity className="w-8 h-8 text-slate-300 mx-auto" />
-        <p className="text-xs font-bold text-slate-700">No hay datos en el rango seleccionado</p>
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 text-center space-y-2">
+        <Activity className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No hay datos en el rango seleccionado</p>
         <p className="text-[11px] text-slate-400">
           Registra tus mediciones diarias para visualizar las gráficas de temperatura y síntomas.
         </p>
@@ -50,7 +46,6 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
     );
   }
 
-  // Summary calculations
   const avgPEF = Math.round(
     filteredLogs.reduce((acc, curr) => acc + curr.pef, 0) / filteredLogs.length
   );
@@ -68,7 +63,6 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
 
   const totalRescuePuffs = filteredLogs.reduce((acc, curr) => acc + (curr.rescuePuffs || 0), 0);
 
-  // Chart dimensions
   const svgWidth = 380;
   const svgHeight = 180;
   const paddingX = 35;
@@ -76,7 +70,6 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
   const plotWidth = svgWidth - paddingX * 2;
   const plotHeight = svgHeight - paddingY * 2;
 
-  // Scale ranges
   const minPEF = Math.min(250, ...filteredLogs.map((l) => l.pef));
   const maxPEF = Math.max(baselinePEF + 40, ...filteredLogs.map((l) => l.pef));
 
@@ -98,7 +91,6 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
     return svgHeight - paddingY - ratio * plotHeight;
   };
 
-  // Generate SVG path points
   const pefPoints = filteredLogs.map((log, i) => `${getX(i)},${getYPEF(log.pef)}`).join(' ');
 
   const tempPoints = filteredLogs
@@ -108,7 +100,6 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
     })
     .join(' ');
 
-  // PEF Thresholds
   const greenThreshold = baselinePEF * 0.8;
   const yellowThreshold = baselinePEF * 0.5;
 
@@ -116,31 +107,31 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
   const yYellow = getYPEF(yellowThreshold);
 
   return (
-    <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-4 transition-colors">
       {/* Cabecera y selectores */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+          <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold">
             <TrendingUp className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-white">
               Evolución Respiratoria y Clima
             </h3>
-            <p className="text-[11px] text-slate-500">Historial diario y factores correlacionados</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Historial diario y factores correlacionados</p>
           </div>
         </div>
 
         {/* Filtros temporales */}
-        <div className="flex bg-slate-100 p-1 rounded-xl self-end sm:self-auto text-[10px] font-semibold">
+        <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-xl self-end sm:self-auto text-[10px] font-semibold">
           {(['7d', '14d', '30d', 'all'] as RangeFilter[]).map((r) => (
             <button
               key={r}
               onClick={() => setRangeFilter(r)}
               className={`px-2 py-1 rounded-lg transition-all ${
                 rangeFilter === r
-                  ? 'bg-white text-slate-800 shadow-sm font-bold'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm font-bold'
+                  : 'text-slate-500 dark:text-slate-300 hover:text-slate-700'
               }`}
             >
               {r === '7d' ? '7 Días' : r === '14d' ? '14 Días' : r === '30d' ? '30 Días' : 'Todos'}
@@ -150,13 +141,13 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
       </div>
 
       {/* Selector de modo de gráfica */}
-      <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100/70 rounded-xl text-xs font-semibold">
+      <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100/70 dark:bg-slate-700/60 rounded-xl text-xs font-semibold">
         <button
           onClick={() => setViewMode('pef')}
           className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
             viewMode === 'pef'
-              ? 'bg-white text-sky-700 shadow-sm font-bold'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-300 shadow-sm font-bold'
+              : 'text-slate-500 dark:text-slate-300 hover:text-slate-800'
           }`}
         >
           <Wind className="w-3.5 h-3.5" />
@@ -166,8 +157,8 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
           onClick={() => setViewMode('temp')}
           className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
             viewMode === 'temp'
-              ? 'bg-white text-amber-600 shadow-sm font-bold'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
+              : 'text-slate-500 dark:text-slate-300 hover:text-slate-800'
           }`}
         >
           <Thermometer className="w-3.5 h-3.5" />
@@ -177,8 +168,8 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
           onClick={() => setViewMode('combined')}
           className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
             viewMode === 'combined'
-              ? 'bg-white text-emerald-700 shadow-sm font-bold'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold'
+              : 'text-slate-500 dark:text-slate-300 hover:text-slate-800'
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
@@ -187,18 +178,18 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
       </div>
 
       {/* Gráfica interactiva SVG */}
-      <div className="relative bg-slate-50/70 rounded-2xl p-3 border border-slate-100 overflow-hidden">
+      <div className="relative bg-slate-50/70 dark:bg-slate-750 rounded-2xl p-3 border border-slate-100 dark:border-slate-700 overflow-hidden">
         {/* Leyenda superior */}
-        <div className="flex items-center justify-between text-[10px] text-slate-500 mb-2 px-1">
+        <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-2 px-1">
           <div className="flex items-center gap-3">
             {(viewMode === 'pef' || viewMode === 'combined') && (
-              <span className="flex items-center gap-1 font-semibold text-sky-700">
+              <span className="flex items-center gap-1 font-semibold text-sky-700 dark:text-sky-400">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" />
                 PEF (L/min)
               </span>
             )}
             {(viewMode === 'temp' || viewMode === 'combined') && (
-              <span className="flex items-center gap-1 font-semibold text-amber-700">
+              <span className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
                 Temp (°C)
               </span>
@@ -208,21 +199,9 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
         </div>
 
         <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto overflow-visible">
-          <defs>
-            <linearGradient id="pefGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0284c7" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#0284c7" stopOpacity="0.0" />
-            </linearGradient>
-            <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-
-          {/* Líneas de referencia de zonas de asma (cuando se muestra PEF) */}
+          {/* Líneas de referencia de zonas de asma */}
           {(viewMode === 'pef' || viewMode === 'combined') && (
             <>
-              {/* Zona Verde (80%) */}
               <line
                 x1={paddingX}
                 y1={yGreen}
@@ -236,14 +215,13 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
               <text
                 x={paddingX}
                 y={yGreen - 3}
-                fill="#059669"
+                fill="#10b981"
                 fontSize="8"
                 fontWeight="bold"
               >
                 Óptimo 80% ({Math.round(greenThreshold)} L/min)
               </text>
 
-              {/* Zona Amarilla (50%) */}
               <line
                 x1={paddingX}
                 y1={yYellow}
@@ -257,7 +235,7 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
               <text
                 x={paddingX}
                 y={yYellow - 3}
-                fill="#d97706"
+                fill="#f59e0b"
                 fontSize="8"
                 fontWeight="bold"
               >
@@ -266,7 +244,7 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
             </>
           )}
 
-          {/* Línea y Relleno de Temperatura */}
+          {/* Línea de Temperatura */}
           {(viewMode === 'temp' || viewMode === 'combined') && (
             <>
               <polyline
@@ -300,7 +278,7 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
             </>
           )}
 
-          {/* Línea y Relleno de PEF */}
+          {/* Línea de PEF */}
           {(viewMode === 'pef' || viewMode === 'combined') && (
             <>
               <polyline
@@ -340,9 +318,8 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
             </>
           )}
 
-          {/* Etiquetas del eje X (Fechas) */}
+          {/* Etiquetas del eje X */}
           {filteredLogs.map((log, i) => {
-            // Mostrar etiqueta en el primer punto, el último y puntos intermedios
             if (filteredLogs.length > 5 && i % 2 !== 0 && i !== filteredLogs.length - 1) return null;
             const cx = getX(i);
             const d = new Date(log.timestamp);
@@ -364,12 +341,12 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
           })}
         </svg>
 
-        {/* Detalle flotante / Tooltip interactivo cuando se selecciona un punto */}
+        {/* Detalle flotante cuando se selecciona un punto */}
         {activeTooltipIndex !== null && filteredLogs[activeTooltipIndex] && (
-          <div className="mt-3 p-3 bg-white rounded-xl border border-slate-200 shadow-md text-xs space-y-1.5 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-              <span className="font-bold text-slate-800 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-sky-600" />
+          <div className="mt-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md text-xs space-y-1.5 animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-1">
+              <span className="font-bold text-slate-800 dark:text-white flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                 {new Date(filteredLogs[activeTooltipIndex].timestamp).toLocaleDateString('es-ES', {
                   weekday: 'short',
                   day: 'numeric',
@@ -390,16 +367,16 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
             <div className="grid grid-cols-2 gap-2 text-[11px]">
               <div>
                 <span className="text-slate-400">Flujo PEF: </span>
-                <strong className="text-slate-800">
+                <strong className="text-slate-800 dark:text-white">
                   {filteredLogs[activeTooltipIndex].pef} L/min
                 </strong>
                 <span
                   className={`ml-1 text-[10px] font-bold ${
                     filteredLogs[activeTooltipIndex].zone === 'green'
-                      ? 'text-emerald-600'
+                      ? 'text-emerald-600 dark:text-emerald-400'
                       : filteredLogs[activeTooltipIndex].zone === 'yellow'
-                      ? 'text-amber-600'
-                      : 'text-rose-600'
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-rose-600 dark:text-rose-400'
                   }`}
                 >
                   ({filteredLogs[activeTooltipIndex].zone})
@@ -408,7 +385,7 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
 
               <div>
                 <span className="text-slate-400">Temperatura: </span>
-                <strong className="text-amber-700">
+                <strong className="text-amber-700 dark:text-amber-400">
                   {filteredLogs[activeTooltipIndex].temperature !== undefined
                     ? `${filteredLogs[activeTooltipIndex].temperature} °C`
                     : 'N/R'}
@@ -417,14 +394,14 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
 
               <div>
                 <span className="text-slate-400">Severidad: </span>
-                <strong className="capitalize text-slate-700">
+                <strong className="capitalize text-slate-700 dark:text-slate-300">
                   {filteredLogs[activeTooltipIndex].severity}
                 </strong>
               </div>
 
               <div>
                 <span className="text-slate-400">Puffs de rescate: </span>
-                <strong className="text-slate-700">
+                <strong className="text-slate-700 dark:text-slate-300">
                   {filteredLogs[activeTooltipIndex].rescuePuffs}
                 </strong>
               </div>
@@ -433,7 +410,7 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
             {filteredLogs[activeTooltipIndex].symptoms.length > 0 && (
               <div className="text-[10px] pt-1">
                 <span className="text-slate-400">Síntomas: </span>
-                <span className="text-slate-700 font-medium">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">
                   {filteredLogs[activeTooltipIndex].symptoms.join(', ')}
                 </span>
               </div>
@@ -444,28 +421,28 @@ export const SymptomTempChart: React.FC<SymptomTempChartProps> = ({ logs, baseli
 
       {/* Indicadores clave resumidos en tarjetas */}
       <div className="grid grid-cols-4 gap-2 text-center">
-        <div className="p-2.5 bg-sky-50/60 rounded-xl border border-sky-100">
-          <p className="text-[10px] text-sky-700 font-semibold">PEF Promedio</p>
-          <p className="text-base font-extrabold text-sky-900">{avgPEF}</p>
+        <div className="p-2.5 bg-sky-50/60 dark:bg-sky-950/40 rounded-xl border border-sky-100 dark:border-sky-900/60">
+          <p className="text-[10px] text-sky-700 dark:text-sky-300 font-semibold">PEF Promedio</p>
+          <p className="text-base font-extrabold text-sky-900 dark:text-sky-200">{avgPEF}</p>
           <p className="text-[9px] text-slate-400">L/min</p>
         </div>
 
-        <div className="p-2.5 bg-amber-50/60 rounded-xl border border-amber-100">
-          <p className="text-[10px] text-amber-700 font-semibold">Temp Media</p>
-          <p className="text-base font-extrabold text-amber-900">{avgTemp} °C</p>
-          <p className="text-[9px] text-slate-400">Registro diario</p>
+        <div className="p-2.5 bg-amber-50/60 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-900/60">
+          <p className="text-[10px] text-amber-700 dark:text-amber-300 font-semibold">Temp Media</p>
+          <p className="text-base font-extrabold text-amber-900 dark:text-amber-200">{avgTemp} °C</p>
+          <p className="text-[9px] text-slate-400">Diaria</p>
         </div>
 
-        <div className="p-2.5 bg-rose-50/60 rounded-xl border border-rose-100">
-          <p className="text-[10px] text-rose-700 font-semibold">Días Síntomas</p>
-          <p className="text-base font-extrabold text-rose-900">{symptomaticDays}</p>
-          <p className="text-[9px] text-slate-400">de {filteredLogs.length} días</p>
+        <div className="p-2.5 bg-rose-50/60 dark:bg-rose-950/40 rounded-xl border border-rose-100 dark:border-rose-900/60">
+          <p className="text-[10px] text-rose-700 dark:text-rose-300 font-semibold">Días Síntomas</p>
+          <p className="text-base font-extrabold text-rose-900 dark:text-rose-200">{symptomaticDays}</p>
+          <p className="text-[9px] text-slate-400">de {filteredLogs.length} d.</p>
         </div>
 
-        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-          <p className="text-[10px] text-slate-600 font-semibold">Rescates</p>
-          <p className="text-base font-extrabold text-slate-800">{totalRescuePuffs}</p>
-          <p className="text-[9px] text-slate-400">inhalaciones</p>
+        <div className="p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600">
+          <p className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold">Rescates</p>
+          <p className="text-base font-extrabold text-slate-800 dark:text-slate-100">{totalRescuePuffs}</p>
+          <p className="text-[9px] text-slate-400">puffs</p>
         </div>
       </div>
     </div>

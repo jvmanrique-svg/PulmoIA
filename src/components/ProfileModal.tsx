@@ -183,12 +183,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 border border-slate-100 dark:border-slate-700">
         {/* Cabecera */}
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-850">
           <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-sky-600" />
-            <h2 className="font-bold text-slate-800 text-sm">
+            <User className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+            <h2 className="font-bold text-slate-800 dark:text-white text-sm">
               {isEditing ? 'Editar Ficha del Paciente' : 'Perfil del Paciente'}
             </h2>
           </div>
@@ -197,7 +197,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="py-1 px-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs flex items-center gap-1 transition-colors"
+                className="py-1 px-2.5 rounded-xl bg-sky-50 dark:bg-slate-700 hover:bg-sky-100 dark:hover:bg-slate-600 text-sky-700 dark:text-sky-300 font-semibold text-xs flex items-center gap-1 transition-colors"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Editar</span>
@@ -205,7 +205,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+              className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -214,8 +214,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
         {/* Mensaje de confirmación */}
         {successMessage && (
-          <div className="p-2.5 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2 text-xs text-emerald-800">
-            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 border-b border-emerald-100 dark:border-emerald-800 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{successMessage}</span>
           </div>
         )}
@@ -227,7 +227,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <form onSubmit={handleSaveProfile} className="space-y-3.5">
               {/* Nombre */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Nombre Completo <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -235,8 +235,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej: Elena Morales"
-                  className={`w-full px-3 py-2 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
-                    errors.name ? 'border-rose-300 ring-rose-100' : 'border-slate-200 focus:ring-sky-100'
+                  className={`w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 ${
+                    errors.name ? 'border-rose-300 ring-rose-100' : 'border-slate-200 dark:border-slate-600 focus:ring-sky-100'
                   }`}
                 />
                 {errors.name && (
@@ -248,7 +248,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
               {/* Teléfono */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Teléfono de Contacto <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -256,8 +256,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Ej: +54 9 11 4521-8899"
-                  className={`w-full px-3 py-2 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
-                    errors.phone ? 'border-rose-300 ring-rose-100' : 'border-slate-200 focus:ring-sky-100'
+                  className={`w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 ${
+                    errors.phone ? 'border-rose-300 ring-rose-100' : 'border-slate-200 dark:border-slate-600 focus:ring-sky-100'
                   }`}
                 />
                 {errors.phone && (
@@ -270,13 +270,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               {/* Nacionalidad y Edad */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Nacionalidad <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={nationality}
                     onChange={(e) => setNationality(e.target.value)}
-                    className="w-full px-2.5 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-sky-100"
+                    className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-100"
                   >
                     {COUNTRIES.map((c) => (
                       <option key={c} value={c}>
@@ -290,7 +290,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Edad <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -299,7 +299,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     max={120}
                     value={age}
                     onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-100"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-100"
                   />
                   {errors.age && <p className="text-[10px] text-rose-600 mt-1">{errors.age}</p>}
                 </div>
@@ -307,13 +307,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
               {/* Condición Respiratoria */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Diagnóstico / Condición Clínica
                 </label>
                 <select
                   value={asthmaType}
                   onChange={(e) => setAsthmaType(e.target.value)}
-                  className="w-full px-2.5 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-sky-100"
+                  className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-100"
                 >
                   {RESPIRATORY_CONDITIONS.map((cond) => (
                     <option key={cond} value={cond}>
@@ -325,7 +325,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
               {/* PEF Óptimo */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   PEF Óptimo Personal (L/min) <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -334,7 +334,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   max={850}
                   value={baselinePEF}
                   onChange={(e) => setBaselinePEF(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-100"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-100"
                 />
                 <p className="text-[10px] text-slate-400 mt-0.5">
                   Calibrado por neumonología como valor de referencia 100%.
@@ -345,42 +345,42 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </div>
 
               {/* Contactos */}
-              <div className="space-y-2 pt-1 border-t border-slate-100">
-                <h4 className="font-bold text-slate-700 text-xs">Médico Especialista</h4>
+              <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700">
+                <h4 className="font-bold text-slate-700 dark:text-slate-300 text-xs">Médico Especialista</h4>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
                     value={docName}
                     onChange={(e) => setDocName(e.target.value)}
                     placeholder="Nombre del Médico"
-                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                    className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white text-xs"
                   />
                   <input
                     type="tel"
                     value={docPhone}
                     onChange={(e) => setDocPhone(e.target.value)}
                     placeholder="Teléfono médico"
-                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                    className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white text-xs"
                   />
                 </div>
               </div>
 
               <div className="space-y-2 pt-1">
-                <h4 className="font-bold text-slate-700 text-xs">Contacto de Emergencia</h4>
+                <h4 className="font-bold text-slate-700 dark:text-slate-300 text-xs">Contacto de Emergencia</h4>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
                     value={emerName}
                     onChange={(e) => setEmerName(e.target.value)}
                     placeholder="Nombre Contacto"
-                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                    className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white text-xs"
                   />
                   <input
                     type="tel"
                     value={emerPhone}
                     onChange={(e) => setEmerPhone(e.target.value)}
                     placeholder="Teléfono Emergencia"
-                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                    className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white text-xs"
                   />
                 </div>
               </div>
@@ -400,7 +400,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     setIsEditing(false);
                     setErrors({});
                   }}
-                  className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-xs"
+                  className="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-xl text-xs"
                 >
                   Cancelar
                 </button>
@@ -414,51 +414,51 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-600 to-teal-500 text-white text-2xl font-black flex items-center justify-center mx-auto shadow-md">
                   {patient.name.charAt(0)}
                 </div>
-                <h3 className="text-base font-bold text-slate-800">{patient.name}</h3>
-                <p className="text-slate-500">
+                <h3 className="text-base font-bold text-slate-800 dark:text-white">{patient.name}</h3>
+                <p className="text-slate-500 dark:text-slate-400">
                   {patient.asthmaType} • {patient.age} años
                 </p>
-                <div className="flex items-center justify-center gap-3 pt-1 text-slate-600">
+                <div className="flex items-center justify-center gap-3 pt-1 text-slate-600 dark:text-slate-300">
                   {patient.phone && (
                     <span className="flex items-center gap-1 text-[11px]">
-                      <Phone className="w-3.5 h-3.5 text-sky-600" /> {patient.phone}
+                      <Phone className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" /> {patient.phone}
                     </span>
                   )}
                   {patient.nationality && (
                     <span className="flex items-center gap-1 text-[11px]">
-                      <Globe className="w-3.5 h-3.5 text-teal-600" /> {patient.nationality}
+                      <Globe className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" /> {patient.nationality}
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Valor de Referencia PEF */}
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+              <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-700 flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] text-slate-500 font-medium">PEF Óptimo Personal</span>
-                  <p className="text-lg font-black text-slate-800">{patient.baselinePEF} L/min</p>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">PEF Óptimo Personal</span>
+                  <p className="text-lg font-black text-slate-800 dark:text-white">{patient.baselinePEF} L/min</p>
                 </div>
-                <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-1 rounded-full">
                   Calibrado
                 </span>
               </div>
 
               {/* Contactos de Confianza */}
               <div className="space-y-2">
-                <h4 className="font-bold text-slate-700">Contactos de Respaldo Clínico</h4>
-                <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-                  <p className="font-semibold text-slate-800">
+                <h4 className="font-bold text-slate-700 dark:text-slate-300">Contactos de Respaldo Clínico</h4>
+                <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700 space-y-1">
+                  <p className="font-semibold text-slate-800 dark:text-white">
                     {patient.doctorContact?.name} ({patient.doctorContact?.specialty || 'Neumonología'})
                   </p>
-                  <p className="text-slate-500 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-sky-600" /> {patient.doctorContact?.phone || 'No registrado'}
+                  <p className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" /> {patient.doctorContact?.phone || 'No registrado'}
                   </p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-                  <p className="font-semibold text-slate-800">
+                <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700 space-y-1">
+                  <p className="font-semibold text-slate-800 dark:text-white">
                     {patient.emergencyContact?.name} ({patient.emergencyContact?.relation || 'Contacto'})
                   </p>
-                  <p className="text-slate-500 flex items-center gap-1.5">
+                  <p className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-rose-500" /> {patient.emergencyContact?.phone || 'No registrado'}
                   </p>
                 </div>
@@ -472,9 +472,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     onClose();
                     onOpenEmergency();
                   }}
-                  className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                  className="w-full py-2.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors border border-rose-200 dark:border-rose-900/60"
                 >
-                  <ShieldAlert className="w-4 h-4 text-rose-600" />
+                  <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                   <span>Ver Plan de Emergencia</span>
                 </button>
 
@@ -484,9 +484,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     onClose();
                     onOpenDoctorReport();
                   }}
-                  className="w-full py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                  className="w-full py-2.5 bg-sky-50 dark:bg-slate-700 hover:bg-sky-100 dark:hover:bg-slate-600 text-sky-700 dark:text-sky-300 font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors border border-sky-100 dark:border-slate-600"
                 >
-                  <FileText className="w-4 h-4 text-sky-600" />
+                  <FileText className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                   <span>Generar Reporte para Neumonólogo</span>
                 </button>
 

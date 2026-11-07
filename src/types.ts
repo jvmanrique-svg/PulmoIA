@@ -1,7 +1,8 @@
-export type TabType = 'inicio' | 'registrar' | 'historial' | 'educacion';
+export type TabType = 'inicio' | 'registrar' | 'historial' | 'asistente' | 'medico' | 'educacion';
 
 export type AsthmaZone = 'green' | 'yellow' | 'red';
 export type SymptomSeverity = 'none' | 'mild' | 'moderate' | 'severe';
+export type ThemeMode = 'light' | 'dark';
 
 export interface Medication {
   id: string;
@@ -101,4 +102,32 @@ export interface AuthUser {
   condition?: string;
   age?: number;
   token?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  sender: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+  isAlert?: boolean;
+  alertType?: 'danger' | 'warning' | 'info';
+  suggestedQuestions?: string[];
+}
+
+export interface DoctorNote {
+  id: string;
+  date: string;
+  doctorName: string;
+  note: string;
+  actionPlanChange?: string;
+  nextConsultationDate?: string;
+}
+
+export interface CloudSyncConfig {
+  provider: 'supabase' | 'firebase';
+  url?: string;
+  apiKey?: string;
+  projectId?: string;
+  lastSync?: string;
+  isConnected: boolean;
 }

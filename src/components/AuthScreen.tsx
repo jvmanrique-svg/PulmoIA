@@ -54,12 +54,10 @@ const RESPIRATORY_CONDITIONS = [
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
 
-  // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Signup form state
   const [signupName, setSignupName] = useState('');
   const [signupPhone, setSignupPhone] = useState('');
   const [signupNationality, setSignupNationality] = useState('Argentina');
@@ -69,12 +67,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
 
-  // Validation errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [successMessage, setSuccessMessage] = useState('');
 
   const validatePhone = (phone: string): boolean => {
-    // Acepta números, espacios, guiones y prefijo '+' con al menos 7 dígitos numéricos
     const digits = phone.replace(/\D/g, '');
     return digits.length >= 7 && digits.length <= 15;
   };
@@ -208,8 +204,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center items-center p-4 transition-colors">
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Cabecera con marca PulmoIA */}
         <div className="bg-gradient-to-br from-sky-600 via-teal-600 to-sky-700 p-6 text-white text-center relative overflow-hidden">
           <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center mx-auto mb-3 shadow-inner">
@@ -227,7 +223,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
         </div>
 
         {/* Pestañas Login vs Signup */}
-        <div className="grid grid-cols-2 p-2 bg-slate-100/80 m-4 rounded-2xl">
+        <div className="grid grid-cols-2 p-2 bg-slate-100/80 dark:bg-slate-700/60 m-4 rounded-2xl">
           <button
             type="button"
             onClick={() => {
@@ -236,8 +232,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
             }}
             className={`py-2.5 text-xs font-bold rounded-xl transition-all ${
               activeTab === 'login'
-                ? 'bg-white text-slate-800 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm'
+                : 'text-slate-500 dark:text-slate-300 hover:text-slate-800'
             }`}
           >
             Iniciar Sesión
@@ -250,8 +246,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
             }}
             className={`py-2.5 text-xs font-bold rounded-xl transition-all ${
               activeTab === 'signup'
-                ? 'bg-white text-slate-800 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm'
+                : 'text-slate-500 dark:text-slate-300 hover:text-slate-800'
             }`}
           >
             Registrar Paciente
@@ -260,8 +256,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
 
         {/* Mensaje de éxito transitorio */}
         {successMessage && (
-          <div className="mx-5 mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="mx-5 mb-3 p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{successMessage}</span>
           </div>
         )}
@@ -270,7 +266,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
         {activeTab === 'login' && (
           <form onSubmit={handleLogin} className="p-5 pt-1 space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Correo Electrónico
               </label>
               <div className="relative">
@@ -280,22 +276,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="ejemplo@paciente.com"
-                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
+                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 ${
                     errors.loginEmail
                       ? 'border-rose-300 ring-rose-100'
-                      : 'border-slate-200 focus:ring-sky-100 focus:border-sky-500'
+                      : 'border-slate-200 dark:border-slate-600 focus:ring-sky-100'
                   }`}
                 />
               </div>
               {errors.loginEmail && (
-                <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1">
+                <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {errors.loginEmail}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Contraseña
               </label>
               <div className="relative">
@@ -305,21 +301,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
+                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 ${
                     errors.loginPassword
                       ? 'border-rose-300 ring-rose-100'
-                      : 'border-slate-200 focus:ring-sky-100 focus:border-sky-500'
+                      : 'border-slate-200 dark:border-slate-600 focus:ring-sky-100'
                   }`}
                 />
               </div>
               {errors.loginPassword && (
-                <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1">
+                <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {errors.loginPassword}
                 </p>
               )}
             </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
+            <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 pt-1">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -332,7 +328,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
               <button
                 type="button"
                 onClick={() => alert('Para restablecer contraseña, contacta a tu centro de salud o soporte.')}
-                className="text-sky-600 hover:underline font-medium"
+                className="text-sky-600 dark:text-sky-400 hover:underline font-medium"
               >
                 ¿Olvidaste tu clave?
               </button>
@@ -347,11 +343,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
             </button>
 
             {/* Acceso Demostración Rápido */}
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
               <button
                 type="button"
                 onClick={handleDemoLogin}
-                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors"
               >
                 <Sparkles className="w-4 h-4 text-amber-500" />
                 <span>Ingresar como Paciente Demo (Elena Morales)</span>
@@ -363,9 +359,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
         {/* Formulario de Registro de Nuevo Paciente */}
         {activeTab === 'signup' && (
           <form onSubmit={handleSignup} className="p-5 pt-1 space-y-3.5 max-h-[75vh] overflow-y-auto">
-            {/* Nombre Completo */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Nombre y Apellidos <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -375,23 +370,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   value={signupName}
                   onChange={(e) => setSignupName(e.target.value)}
                   placeholder="Ej: Sofía Ramírez"
-                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
+                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 ${
                     errors.signupName
                       ? 'border-rose-300 ring-rose-100'
-                      : 'border-slate-200 focus:ring-sky-100 focus:border-sky-500'
+                      : 'border-slate-200 dark:border-slate-600 focus:ring-sky-100'
                   }`}
                 />
               </div>
               {errors.signupName && (
-                <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1">
+                <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {errors.signupName}
                 </p>
               )}
             </div>
 
-            {/* Teléfono */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Teléfono de Contacto <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -401,25 +395,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   value={signupPhone}
                   onChange={(e) => setSignupPhone(e.target.value)}
                   placeholder="+54 9 11 4521-8899"
-                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
+                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 ${
                     errors.signupPhone
                       ? 'border-rose-300 ring-rose-100'
-                      : 'border-slate-200 focus:ring-sky-100 focus:border-sky-500'
+                      : 'border-slate-200 dark:border-slate-600 focus:ring-sky-100'
                   }`}
                 />
               </div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Se utilizará en caso de alertas de emergencia.</p>
               {errors.signupPhone && (
-                <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1">
+                <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {errors.signupPhone}
                 </p>
               )}
             </div>
 
-            {/* Nacionalidad y Edad */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Nacionalidad <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
@@ -427,7 +419,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   <select
                     value={signupNationality}
                     onChange={(e) => setSignupNationality(e.target.value)}
-                    className="w-full pl-9 pr-2 py-2.5 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-sky-100"
+                    className="w-full pl-9 pr-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none"
                   >
                     {COUNTRIES.map((c) => (
                       <option key={c} value={c}>
@@ -439,7 +431,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Edad (años) <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -448,23 +440,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   max={120}
                   value={signupAge}
                   onChange={(e) => setSignupAge(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-100"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none"
                 />
                 {errors.signupAge && (
-                  <p className="text-[10px] text-rose-600 mt-1">{errors.signupAge}</p>
+                  <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">{errors.signupAge}</p>
                 )}
               </div>
             </div>
 
-            {/* Condición Respiratoria */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Condición / Diagnóstico Respiratorio
               </label>
               <select
                 value={signupCondition}
                 onChange={(e) => setSignupCondition(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-sky-100"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none"
               >
                 {RESPIRATORY_CONDITIONS.map((cond) => (
                   <option key={cond} value={cond}>
@@ -474,9 +465,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
               </select>
             </div>
 
-            {/* Email */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Correo Electrónico <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -486,24 +476,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   placeholder="paciente@correo.com"
-                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
+                  className={`w-full pl-10 pr-3 py-2.5 rounded-xl border text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 ${
                     errors.signupEmail
                       ? 'border-rose-300 ring-rose-100'
-                      : 'border-slate-200 focus:ring-sky-100 focus:border-sky-500'
+                      : 'border-slate-200 dark:border-slate-600 focus:ring-sky-100'
                   }`}
                 />
               </div>
               {errors.signupEmail && (
-                <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1">
+                <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {errors.signupEmail}
                 </p>
               )}
             </div>
 
-            {/* Contraseñas */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Contraseña <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -511,19 +500,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   value={signupPassword}
                   onChange={(e) => setSignupPassword(e.target.value)}
                   placeholder="Min. 6 carácteres"
-                  className={`w-full px-3 py-2.5 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
-                    errors.signupPassword
-                      ? 'border-rose-300 ring-rose-100'
-                      : 'border-slate-200 focus:ring-sky-100'
-                  }`}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none"
                 />
                 {errors.signupPassword && (
-                  <p className="text-[10px] text-rose-600 mt-1">{errors.signupPassword}</p>
+                  <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">{errors.signupPassword}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Confirmar <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -531,14 +516,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                   value={signupConfirmPassword}
                   onChange={(e) => setSignupConfirmPassword(e.target.value)}
                   placeholder="Repetir clave"
-                  className={`w-full px-3 py-2.5 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
-                    errors.signupConfirmPassword
-                      ? 'border-rose-300 ring-rose-100'
-                      : 'border-slate-200 focus:ring-sky-100'
-                  }`}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none"
                 />
                 {errors.signupConfirmPassword && (
-                  <p className="text-[10px] text-rose-600 mt-1">{errors.signupConfirmPassword}</p>
+                  <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">{errors.signupConfirmPassword}</p>
                 )}
               </div>
             </div>

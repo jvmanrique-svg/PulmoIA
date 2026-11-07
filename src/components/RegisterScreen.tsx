@@ -4,10 +4,8 @@ import { saveSymptomLog, calculateAsthmaZone } from '../db/localDB';
 import { 
   Wind, 
   Activity, 
-  AlertCircle, 
   CheckCircle2, 
   Pill, 
-  Calendar, 
   FileText, 
   Plus, 
   Minus,
@@ -49,7 +47,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   onNavigate,
   currentEnvironment 
 }) => {
-  // Estado del formulario
   const [pefValue, setPefValue] = useState<number>(440);
   const [severity, setSeverity] = useState<SymptomSeverity>('none');
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
@@ -58,16 +55,13 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const [medicationTaken, setMedicationTaken] = useState<boolean>(true);
   const [notes, setNotes] = useState<string>('');
 
-  // Parámetros climáticos asociados a la medición
   const [recordedTemp, setRecordedTemp] = useState<number>(currentEnvironment?.temperature ?? 21);
   const [recordedHumidity, setRecordedHumidity] = useState<number>(currentEnvironment?.humidity ?? 60);
 
-  // Feedback y confirmación
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [savedRecord, setSavedRecord] = useState<SymptomLog | null>(null);
 
-  // Zona calculada según el PEF
   const currentZone: AsthmaZone = calculateAsthmaZone(pefValue, 480);
 
   const getZoneBadge = (zone: AsthmaZone) => {
@@ -76,25 +70,22 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         return {
           title: 'Zona Verde - Óptimo (≥ 80%)',
           description: 'Vías respiratorias despejadas. Buen control del asma.',
-          bg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+          bg: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
           indicator: 'bg-emerald-500',
-          textColor: 'text-emerald-700'
         };
       case 'yellow':
         return {
           title: 'Zona Amarilla - Precaución (50-79%)',
           description: 'Precaución. Posible inicio de inflamación o estrechamiento.',
-          bg: 'bg-amber-50 text-amber-800 border-amber-200',
+          bg: 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800',
           indicator: 'bg-amber-500',
-          textColor: 'text-amber-700'
         };
       case 'red':
         return {
           title: 'Zona Roja - Alerta Médica (< 50%)',
           description: 'Atención médica requerida. Inicia medicación de rescate.',
-          bg: 'bg-rose-50 text-rose-800 border-rose-200',
+          bg: 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800',
           indicator: 'bg-rose-500',
-          textColor: 'text-rose-700'
         };
     }
   };
@@ -136,13 +127,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     };
 
     try {
-      // 1. Guardar en Base de Datos Local (IndexedDB + LocalStorage)
       await saveSymptomLog(newLog);
-
-      // 2. Notificar al estado de la aplicación App.tsx
       onSaveLog(newLog);
-
-      // 3. Mostrar confirmación con datos guardados
       setSavedRecord(newLog);
       setShowSuccessModal(true);
     } catch (error) {
@@ -156,30 +142,30 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   return (
     <div className="space-y-6 pb-6">
       {/* Título de Cabecera */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm transition-colors">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
-            <Activity className="w-5 h-5 text-sky-600" />
+          <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 flex items-center justify-center font-bold">
+            <Activity className="w-5 h-5 text-sky-600 dark:text-sky-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Nuevo Registro Clínico</h1>
-            <p className="text-xs text-slate-500">Registra tus parámetros respiratorios, temperatura y síntomas</p>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Nuevo Registro Clínico</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Registra tus parámetros respiratorios, temperatura y síntomas</p>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* 1. Medición PEF (Peak Expiratory Flow) */}
-        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
+        {/* 1. Medición PEF */}
+        <section className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-4 transition-colors">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Wind className="w-5 h-5 text-sky-600" />
-              <label htmlFor="pef-slider" className="font-semibold text-slate-800 text-sm">
+              <Wind className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+              <label htmlFor="pef-slider" className="font-semibold text-slate-800 dark:text-white text-sm">
                 Flujo Espiratorio Máximo (PEF)
               </label>
             </div>
-            <span className="text-2xl font-black text-slate-900 tracking-tight">
-              {pefValue} <span className="text-xs font-medium text-slate-500">L/min</span>
+            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {pefValue} <span className="text-xs font-medium text-slate-500 dark:text-slate-400">L/min</span>
             </span>
           </div>
 
@@ -202,7 +188,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               step={5}
               value={pefValue}
               onChange={(e) => setPefValue(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600"
+              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-600"
             />
             <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
               <span>100 L/min</span>
@@ -210,14 +196,14 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setPefValue((v) => Math.max(100, v - 10))}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <Minus className="w-3 h-3" /> -10
                 </button>
                 <button
                   type="button"
                   onClick={() => setPefValue((v) => Math.min(700, v + 10))}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <Plus className="w-3 h-3" /> +10
                 </button>
@@ -228,63 +214,63 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         </section>
 
         {/* 2. Registro de Temperatura y Condiciones Ambientales */}
-        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
+        <section className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-3 transition-colors">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sun className="w-5 h-5 text-amber-500" />
-              <label className="font-semibold text-slate-800 text-sm">
+              <label className="font-semibold text-slate-800 dark:text-white text-sm">
                 Clima y Temperatura Registrada
               </label>
             </div>
             {currentEnvironment?.city && (
-              <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-sky-600" />
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                 {currentEnvironment.city.split(',')[0]}
               </span>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-              <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+            <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200/80 dark:border-slate-600">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
                 <Sun className="w-3.5 h-3.5 text-amber-500" /> Temperatura actual
               </span>
               <div className="flex items-center justify-between mt-2">
                 <button
                   type="button"
                   onClick={() => setRecordedTemp((t) => t - 1)}
-                  className="w-7 h-7 bg-white rounded-lg border border-slate-200 font-bold text-xs"
+                  className="w-7 h-7 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 font-bold text-xs text-slate-800 dark:text-white"
                 >
                   -
                 </button>
-                <span className="font-extrabold text-base text-slate-800">{recordedTemp} °C</span>
+                <span className="font-extrabold text-base text-slate-800 dark:text-white">{recordedTemp} °C</span>
                 <button
                   type="button"
                   onClick={() => setRecordedTemp((t) => t + 1)}
-                  className="w-7 h-7 bg-white rounded-lg border border-slate-200 font-bold text-xs"
+                  className="w-7 h-7 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 font-bold text-xs text-slate-800 dark:text-white"
                 >
                   +
                 </button>
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-              <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+            <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200/80 dark:border-slate-600">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
                 <Droplets className="w-3.5 h-3.5 text-sky-500" /> Humedad relativa
               </span>
               <div className="flex items-center justify-between mt-2">
                 <button
                   type="button"
                   onClick={() => setRecordedHumidity((h) => Math.max(10, h - 5))}
-                  className="w-7 h-7 bg-white rounded-lg border border-slate-200 font-bold text-xs"
+                  className="w-7 h-7 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 font-bold text-xs text-slate-800 dark:text-white"
                 >
                   -
                 </button>
-                <span className="font-extrabold text-base text-slate-800">{recordedHumidity}%</span>
+                <span className="font-extrabold text-base text-slate-800 dark:text-white">{recordedHumidity}%</span>
                 <button
                   type="button"
                   onClick={() => setRecordedHumidity((h) => Math.min(100, h + 5))}
-                  className="w-7 h-7 bg-white rounded-lg border border-slate-200 font-bold text-xs"
+                  className="w-7 h-7 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 font-bold text-xs text-slate-800 dark:text-white"
                 >
                   +
                 </button>
@@ -293,9 +279,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           </div>
         </section>
 
-        {/* 3. Nivel de Severidad de Síntomas */}
-        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
-          <label className="font-semibold text-slate-800 text-sm block">Severidad general en el día</label>
+        {/* 3. Severidad */}
+        <section className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-3 transition-colors">
+          <label className="font-semibold text-slate-800 dark:text-white text-sm block">Severidad general en el día</label>
           <div className="grid grid-cols-2 gap-2">
             {[
               { id: 'none', label: 'Sin síntomas', desc: 'Normal' },
@@ -309,20 +295,20 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 onClick={() => setSeverity(item.id as SymptomSeverity)}
                 className={`p-3 rounded-xl border text-left transition-all ${
                   severity === item.id
-                    ? 'border-sky-600 bg-sky-50 text-sky-800 ring-1 ring-sky-600'
-                    : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                    ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 ring-1 ring-sky-600'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <p className="font-semibold text-xs">{item.label}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">{item.desc}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{item.desc}</p>
               </button>
             ))}
           </div>
         </section>
 
-        {/* 4. Síntomas Presentes */}
-        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
-          <label className="font-semibold text-slate-800 text-sm block">Síntomas específicos identificados</label>
+        {/* 4. Síntomas */}
+        <section className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-3 transition-colors">
+          <label className="font-semibold text-slate-800 dark:text-white text-sm block">Síntomas específicos identificados</label>
           <div className="flex flex-wrap gap-2">
             {COMMON_SYMPTOMS.map((symptom) => {
               const isSelected = selectedSymptoms.includes(symptom);
@@ -334,7 +320,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     isSelected
                       ? 'bg-sky-600 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
                   {symptom}
@@ -344,9 +330,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           </div>
         </section>
 
-        {/* 5. Desencadenantes Detectados */}
-        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
-          <label className="font-semibold text-slate-800 text-sm block">Desencadenantes ambientales / actividad</label>
+        {/* 5. Desencadenantes */}
+        <section className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-3 transition-colors">
+          <label className="font-semibold text-slate-800 dark:text-white text-sm block">Desencadenantes ambientales / actividad</label>
           <div className="flex flex-wrap gap-2">
             {COMMON_TRIGGERS.map((trigger) => {
               const isSelected = selectedTriggers.includes(trigger);
@@ -358,7 +344,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     isSelected
                       ? 'bg-amber-500 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
                   {trigger}
@@ -368,41 +354,41 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           </div>
         </section>
 
-        {/* 6. Medicación Administrada */}
-        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
+        {/* 6. Medicación */}
+        <section className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-4 transition-colors">
           <div className="flex items-center gap-2">
-            <Pill className="w-5 h-5 text-sky-600" />
-            <h2 className="font-semibold text-slate-800 text-sm">Control de Medicación</h2>
+            <Pill className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+            <h2 className="font-semibold text-slate-800 dark:text-white text-sm">Control de Medicación</h2>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
             <div>
-              <p className="text-xs font-semibold text-slate-800">Inhalador de Rescate (Puffs de Salbutamol)</p>
-              <p className="text-[11px] text-slate-500">¿Cuántas inhalaciones de alivio utilizaste?</p>
+              <p className="text-xs font-semibold text-slate-800 dark:text-white">Inhalador de Rescate (Salbutamol)</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">¿Cuántas inhalaciones de alivio utilizaste?</p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setRescuePuffs((v) => Math.max(0, v - 1))}
-                className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100"
+                className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100"
               >
                 -
               </button>
-              <span className="w-6 text-center font-bold text-sm text-slate-800">{rescuePuffs}</span>
+              <span className="w-6 text-center font-bold text-sm text-slate-800 dark:text-white">{rescuePuffs}</span>
               <button
                 type="button"
                 onClick={() => setRescuePuffs((v) => v + 1)}
-                className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100"
+                className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100"
               >
                 +
               </button>
             </div>
           </div>
 
-          <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+          <label className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl cursor-pointer">
             <div>
-              <p className="text-xs font-semibold text-slate-800">Dosis de Mantenimiento Diaria</p>
-              <p className="text-[11px] text-slate-500">Inhalador de control tomado según prescripción</p>
+              <p className="text-xs font-semibold text-slate-800 dark:text-white">Dosis de Mantenimiento Diaria</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Inhalador de control tomado según prescripción</p>
             </div>
             <input
               type="checkbox"
@@ -413,11 +399,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           </label>
         </section>
 
-        {/* 7. Observaciones y Notas */}
-        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-2">
+        {/* 7. Notas */}
+        <section className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-2 transition-colors">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-slate-500" />
-            <label htmlFor="notes-field" className="font-semibold text-slate-800 text-sm">
+            <label htmlFor="notes-field" className="font-semibold text-slate-800 dark:text-white text-sm">
               Notas adicionales para tu médico
             </label>
           </div>
@@ -426,11 +412,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Escribe sensaciones adicionales, respuesta a la medicación o eventos particulares..."
-            className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-500 resize-none h-20"
+            className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-200 resize-none h-20"
           />
         </section>
 
-        {/* Botón de Enviar Formulario */}
+        {/* Botón de Enviar */}
         <div className="pt-2">
           <button
             type="submit"
@@ -452,43 +438,39 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       {/* Modal de Confirmación */}
       {showSuccessModal && savedRecord && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center mb-4">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <h3 className="text-xl font-bold text-center text-slate-900 mb-1">
+            <h3 className="text-xl font-bold text-center text-slate-900 dark:text-white mb-1">
               ¡Registro Guardado con Éxito!
             </h3>
-            <p className="text-xs text-center text-slate-500 mb-5">
+            <p className="text-xs text-center text-slate-500 dark:text-slate-400 mb-5">
               Los datos clínicos y ambientales se han persistido correctamente.
             </p>
 
-            <div className="bg-slate-50 rounded-2xl p-4 space-y-2 mb-6 border border-slate-100 text-xs">
-              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Flujo PEF registrado:</span>
-                <span className="font-bold text-slate-800">{savedRecord.pef} L/min</span>
+            <div className="bg-slate-50 dark:bg-slate-700/50 rounded-2xl p-4 space-y-2 mb-6 border border-slate-100 dark:border-slate-600 text-xs">
+              <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-600">
+                <span className="text-slate-500 dark:text-slate-400">Flujo PEF registrado:</span>
+                <span className="font-bold text-slate-800 dark:text-white">{savedRecord.pef} L/min</span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Clasificación de zona:</span>
+              <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-600">
+                <span className="text-slate-500 dark:text-slate-400">Clasificación de zona:</span>
                 <span className={`font-bold capitalize ${
-                  savedRecord.zone === 'green' ? 'text-emerald-600' :
-                  savedRecord.zone === 'yellow' ? 'text-amber-600' : 'text-rose-600'
+                  savedRecord.zone === 'green' ? 'text-emerald-600 dark:text-emerald-400' :
+                  savedRecord.zone === 'yellow' ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
                 }`}>
                   Zona {savedRecord.zone === 'green' ? 'Verde' : savedRecord.zone === 'yellow' ? 'Amarilla' : 'Roja'}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Temperatura registrada:</span>
-                <span className="font-semibold text-slate-800">{savedRecord.temperature} °C</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Severidad de síntomas:</span>
-                <span className="font-semibold text-slate-800 capitalize">{savedRecord.severity}</span>
+              <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-600">
+                <span className="text-slate-500 dark:text-slate-400">Temperatura registrada:</span>
+                <span className="font-semibold text-slate-800 dark:text-white">{savedRecord.temperature} °C</span>
               </div>
               <div className="flex justify-between items-center py-1">
-                <span className="text-slate-500">Puffs de rescate:</span>
-                <span className="font-semibold text-slate-800">{savedRecord.rescuePuffs} inhalaciones</span>
+                <span className="text-slate-500 dark:text-slate-400">Puffs de rescate:</span>
+                <span className="font-semibold text-slate-800 dark:text-white">{savedRecord.rescuePuffs} inhalaciones</span>
               </div>
             </div>
 
@@ -511,7 +493,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                   setShowSuccessModal(false);
                   onNavigate('inicio');
                 }}
-                className="w-full py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs hover:bg-slate-200 transition-colors"
+                className="w-full py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
               >
                 Volver al Inicio
               </button>

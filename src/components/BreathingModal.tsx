@@ -27,7 +27,6 @@ export const BreathingModal: React.FC<BreathingModalProps> = ({ isOpen, onClose 
       setCounter((prev) => {
         if (prev > 1) return prev - 1;
 
-        // Cambiar fase del ciclo 4-7-8
         if (phase === 'inhala') {
           setPhase('sosten');
           return 7;
@@ -50,31 +49,31 @@ export const BreathingModal: React.FC<BreathingModalProps> = ({ isOpen, onClose 
     inhala: {
       text: 'Inhala suavemente por la nariz',
       color: 'bg-teal-500 scale-125',
-      badge: 'bg-teal-100 text-teal-800',
+      badge: 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300',
     },
     sosten: {
       text: 'Mantén el aire con calma',
       color: 'bg-sky-500 scale-110',
-      badge: 'bg-sky-100 text-sky-800',
+      badge: 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300',
     },
     exhala: {
       text: 'Exhala despacio con labios fruncidos',
       color: 'bg-indigo-500 scale-90',
-      badge: 'bg-indigo-100 text-indigo-800',
+      badge: 'bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300',
     },
   }[phase];
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl flex flex-col items-center text-center animate-in fade-in zoom-in-95">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl flex flex-col items-center text-center animate-in fade-in zoom-in-95 border border-slate-100 dark:border-slate-700">
         <div className="w-full flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
-            <HeartPulse className="w-5 h-5 text-teal-600" />
-            <h2 className="font-bold text-slate-800 text-sm">Respiración Guiada 4-7-8</h2>
+            <HeartPulse className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            <h2 className="font-bold text-slate-800 dark:text-white text-sm">Respiración Guiada 4-7-8</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+            className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,7 +93,7 @@ export const BreathingModal: React.FC<BreathingModalProps> = ({ isOpen, onClose 
           <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${phaseConfig.badge}`}>
             {isActive ? phase.toUpperCase() : 'LISTO PARA EMPEZAR'}
           </span>
-          <p className="text-xs text-slate-600 font-medium pt-1">
+          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium pt-1">
             {isActive ? phaseConfig.text : 'Presiona Iniciar para calmar el ritmo respiratorio y destensar el pecho.'}
           </p>
         </div>
@@ -115,7 +114,7 @@ export const BreathingModal: React.FC<BreathingModalProps> = ({ isOpen, onClose 
                 setPhase('inhala');
                 setCounter(4);
               }}
-              className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
+              className="p-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition-colors"
               title="Reiniciar"
             >
               <RotateCcw className="w-4 h-4" />

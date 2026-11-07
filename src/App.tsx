@@ -10,7 +10,8 @@ import {
   PatientProfile, 
   EnvironmentalData, 
   AuthUser,
-  Medication 
+  Medication,
+  ThemeMode 
 } from './types';
 import { INITIAL_PATIENT, INITIAL_LOGS, INITIAL_ENVIRONMENT } from './data/mockData';
 import { Header } from './components/Header';
@@ -25,9 +26,30 @@ import { EmergencyModal } from './components/EmergencyModal';
 import { BreathingModal } from './components/BreathingModal';
 import { MedicationManagerModal } from './components/MedicationManagerModal';
 import { AuthScreen } from './components/AuthScreen';
+import { AIChatScreen } from './components/AIChatScreen';
+import { DoctorPortalScreen } from './components/DoctorPortalScreen';
+import { CloudSyncModal } from './components/CloudSyncModal';
 import { fetchLiveWeatherByCity } from './services/weatherService';
+import { getAllSymptomLogs } from './db/localDB';
+import { WifiOff, Sparkles, Check } from 'lucide-react';
 
 export default function App() {
+  // Estado de Tema Oscuro / Claro
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    try {
+      const savedTheme = localStorage.getItem('pulmo_theme') as ThemeMode;
+      if (savedTheme) return savedTheme;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
+  // Estado de Conectividad (Online / Offline PWA)
+  const [isOnline, setIsOnline] = useState<boolean>(() => {
+    return typeof navigator !== 'undefined' ? navigator.onLine : true;
+  });
+
   // Estado de Autenticación (Login & Signup)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
@@ -91,52 +113,85 @@ export default function App() {
   const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
   const [isBreathingOpen, setIsBreathingOpen] = useState<boolean>(false);
   const [isMedicationManagerOpen, setIsMedicationManagerOpen] = useState<boolean>(false);
+  const [isCloudSyncOpen, setIsCloudSyncOpen] = useState<boolean>(false);
+
+  // Aplicar tema oscuro / claro a nivel del documento raíz
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('pulmo_theme', theme);
+    } catch {}
+  }, [theme]);
+
+  // Listener para monitoreo de conectividad Online/Offline PWA
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Cargar datos desde IndexedDB en inicio si existen
+  useEffect(() => {
+    getAllSymptomLogs()
+      .then((idbLogs) => {
+        if (idbLogs && idbLogs.length > 0) {
+          setLogs(idbLogs);
+        }
+      })
+      .catch((e) => console.warn('Carga IndexedDB fallback:', e));
+  }, []);
 
   // Sincronizaciones con localStorage
   useEffect(() => {
     try {
       localStorage.setItem('pulmo_patient', JSON.stringify(patient));
-    } catch {
-      // storage unavailable
-    }
+    } catch {}
   }, [patient]);
 
   useEffect(() => {
     try {
       localStorage.setItem('pulmo_logs', JSON.stringify(logs));
-    } catch {
-      // storage unavailable
-    }
+    } catch {}
   }, [logs]);
 
   useEffect(() => {
     try {
       localStorage.setItem('pulmo_environment', JSON.stringify(environment));
-    } catch {
-      // storage unavailable
-    }
+    } catch {}
   }, [environment]);
 
   useEffect(() => {
     try {
       localStorage.setItem('pulmo_questions', JSON.stringify(selectedQuestions));
-    } catch {
-      // storage unavailable
-    }
+    } catch {}
   }, [selectedQuestions]);
 
   // Actualización de clima inicial en segundo plano si la red está disponible
   useEffect(() => {
-    if (environment.city) {
+    if (navigator.onLine && environment.city) {
       fetchLiveWeatherByCity(environment.city.split(',')[0])
         .then((freshData) => {
           setEnvironment(freshData);
         })
-        .catch(() => {
-          // Continúa con los datos previos sin interrumpir la app
-        });
+        .catch(() => {});
     }
   }, []);
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   const handleSaveLog = (newLog: SymptomLog) => {
     setLogs((prev) => [newLog, ...prev]);
@@ -190,23 +245,44 @@ export default function App() {
     setActiveTab('inicio');
   };
 
-  // Si no está autenticado, muestra la Pantalla de Autenticación (Login / Signup)
+  const handleDataRestored = () => {
+    try {
+      const restoredPatient = localStorage.getItem('pulmo_patient');
+      if (restoredPatient) setPatient(JSON.parse(restoredPatient));
+      const restoredLogs = localStorage.getItem('pulmo_logs');
+      if (restoredLogs) setLogs(JSON.parse(restoredLogs));
+      setIsCloudSyncOpen(false);
+    } catch {}
+  };
+
+  // Si no está autenticado, muestra la Pantalla de Autenticación
   if (!currentUser) {
     return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased flex flex-col justify-between selection:bg-sky-100 selection:text-sky-900">
-      {/* Barra Superior */}
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-100 antialiased flex flex-col justify-between selection:bg-sky-100 dark:selection:bg-sky-950 selection:text-sky-900 dark:selection:text-sky-200 transition-colors duration-200">
+      {/* Barra Superior con Toggle de Modo Oscuro / Claro y Persistencia */}
       <Header
         patient={patient}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         onOpenProfile={() => setIsProfileOpen(true)}
         onNavigateHome={() => setActiveTab('inicio')}
+        onOpenCloudSync={() => setIsCloudSyncOpen(true)}
         onLogout={handleLogout}
       />
 
+      {/* Banner de Estado Offline PWA */}
+      {!isOnline && (
+        <div className="fixed top-16 left-0 right-0 z-30 bg-amber-500 text-white py-1 px-4 text-center text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm animate-in slide-in-from-top">
+          <WifiOff className="w-3.5 h-3.5" />
+          <span>Modo Sin Conexión activo — Tus registros se guardan en IndexedDB y se sincronizarán al reconectar.</span>
+        </div>
+      )}
+
       {/* Área Principal de Contenido */}
-      <main className="flex-1 flex flex-col relative w-full max-w-md mx-auto px-4 pt-20 pb-24">
+      <main className={`flex-1 flex flex-col relative w-full max-w-md mx-auto px-4 ${!isOnline ? 'pt-24' : 'pt-20'} pb-24`}>
         {activeTab === 'inicio' && (
           <HomeScreen
             patient={patient}
@@ -217,6 +293,23 @@ export default function App() {
             onOpenBreathing={() => setIsBreathingOpen(true)}
             onOpenEmergency={() => setIsEmergencyOpen(true)}
             onOpenMedicationManager={() => setIsMedicationManagerOpen(true)}
+          />
+        )}
+
+        {activeTab === 'asistente' && (
+          <AIChatScreen
+            patient={patient}
+            environment={environment}
+            logs={logs}
+            onOpenEmergency={() => setIsEmergencyOpen(true)}
+          />
+        )}
+
+        {activeTab === 'medico' && (
+          <DoctorPortalScreen
+            patient={patient}
+            logs={logs}
+            onOpenDoctorReport={() => setIsDoctorReportOpen(true)}
           />
         )}
 
@@ -247,7 +340,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Barra de Navegación Inferior Fija */}
+      {/* Barra de Navegación Inferior Fija (5 Pestañas Clave) */}
       <BottomNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab)} />
 
       {/* Modales y Capas Interactivas */}
@@ -274,6 +367,12 @@ export default function App() {
         onClose={() => setIsMedicationManagerOpen(false)}
         medications={patient.currentMedications}
         onSaveMedications={handleSaveMedications}
+      />
+
+      <CloudSyncModal
+        isOpen={isCloudSyncOpen}
+        onClose={() => setIsCloudSyncOpen(false)}
+        onDataRestored={handleDataRestored}
       />
 
       <EmergencyModal

@@ -64,10 +64,8 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
     }
   });
 
-  // Sort by time (e.g. 08:00, 14:00, 20:00)
   todayDoses.sort((a, b) => a.time.localeCompare(b.time));
 
-  // Save changes to localStorage
   const toggleDose = (doseKey: string) => {
     const updated = {
       ...reminders,
@@ -93,7 +91,7 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
         setNotificationsAllowed(true);
         new Notification('PulmoIA Recordatorios', {
           body: '¡Notificaciones activadas! Te recordaremos la toma de tus inhaladores a tiempo.',
-          icon: '/favicon.ico',
+          icon: '/icons/icon-192.svg',
         });
       }
     } catch (e) {
@@ -106,25 +104,25 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
   const percentage = totalCount > 0 ? Math.round((takenCount / totalCount) * 100) : 100;
 
   return (
-    <section className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
+    <section className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-4 transition-colors">
       {/* Cabecera */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center font-bold">
-            <Bell className="w-4 h-4 text-sky-600" />
+          <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-bold">
+            <Bell className="w-4 h-4 text-sky-600 dark:text-sky-400" />
           </div>
           <div>
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Recordatorios de Hoy
             </h3>
-            <p className="text-[11px] text-slate-500">Plan de inhaladores y medicamentos</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Plan de inhaladores y medicamentos</p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={onOpenMedicationManager}
-          className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors"
+          className="p-1.5 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
           title="Editar medicamentos y horarios"
         >
           <Settings className="w-4 h-4" />
@@ -133,16 +131,15 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
 
       {/* Progreso de adherencia */}
       {totalCount > 0 && (
-        <div className="p-3 bg-gradient-to-r from-sky-50 to-teal-50 rounded-2xl border border-sky-100 space-y-2">
+        <div className="p-3 bg-gradient-to-r from-sky-50 to-teal-50 dark:from-slate-750 dark:to-slate-700 rounded-2xl border border-sky-100 dark:border-slate-600 space-y-2">
           <div className="flex justify-between items-center text-xs">
-            <span className="font-semibold text-slate-700">Adherencia terapéutica de hoy</span>
-            <span className="font-extrabold text-sky-800">
+            <span className="font-semibold text-slate-700 dark:text-slate-200">Adherencia terapéutica de hoy</span>
+            <span className="font-extrabold text-sky-800 dark:text-sky-300">
               {takenCount} de {totalCount} ({percentage}%)
             </span>
           </div>
 
-          {/* Barra de progreso */}
-          <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-slate-200/80 dark:bg-slate-600 rounded-full h-2 overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 percentage === 100 ? 'bg-emerald-500' : 'bg-sky-600'
@@ -156,9 +153,9 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
       {/* Lista de dosis programadas para hoy */}
       <div className="space-y-2">
         {todayDoses.length === 0 ? (
-          <div className="text-center py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 p-4">
-            <Pill className="w-6 h-6 text-slate-300 mx-auto mb-1.5" />
-            <p className="text-xs font-semibold text-slate-700">No hay tomas programadas</p>
+          <div className="text-center py-4 bg-slate-50 dark:bg-slate-750 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+            <Pill className="w-6 h-6 text-slate-300 dark:text-slate-500 mx-auto mb-1.5" />
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No hay tomas programadas</p>
             <p className="text-[11px] text-slate-400 mt-0.5">
               Configura tus medicamentos y horarios para activar los recordatorios.
             </p>
@@ -179,8 +176,8 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
                 onClick={() => toggleDose(dose.key)}
                 className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                   isTaken
-                    ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
-                    : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200/80 text-slate-800'
+                    ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                    : 'bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100/70 dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-600 text-slate-800 dark:text-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -188,10 +185,10 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
                     className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
                       isTaken
                         ? 'bg-emerald-500 text-white shadow-sm'
-                        : 'bg-white border border-slate-200 text-slate-700'
+                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200'
                     }`}
                   >
-                    {isTaken ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-4 h-4 text-sky-600" />}
+                    {isTaken ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-4 h-4 text-sky-600 dark:text-sky-400" />}
                   </div>
 
                   <div>
@@ -202,7 +199,7 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
                         {dose.medName}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       {dose.dosage}
                       {dose.instructions ? ` • ${dose.instructions}` : ''}
                     </p>
@@ -217,7 +214,7 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                     isTaken
-                      ? 'bg-emerald-200 text-emerald-800 hover:bg-emerald-300'
+                      ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-300'
                       : 'bg-sky-600 hover:bg-sky-700 text-white shadow-sm'
                   }`}
                 >
@@ -230,7 +227,7 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
       </div>
 
       {/* Activar notificaciones del navegador */}
-      <div className="pt-1 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
+      <div className="pt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700">
         <div className="flex items-center gap-1.5">
           <BellRing className={`w-3.5 h-3.5 ${notificationsAllowed ? 'text-emerald-500' : 'text-slate-400'}`} />
           <span className="text-[11px]">
@@ -242,7 +239,7 @@ export const MedicationRemindersCard: React.FC<MedicationRemindersCardProps> = (
           <button
             type="button"
             onClick={requestNotificationPermission}
-            className="text-sky-600 hover:text-sky-700 font-semibold text-[11px] underline"
+            className="text-sky-600 dark:text-sky-400 hover:underline font-semibold text-[11px]"
           >
             Activar avisos
           </button>

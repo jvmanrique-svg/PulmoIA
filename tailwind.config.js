@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -13,7 +14,9 @@ export default {
         'on-surface': '#1A1C1E',
         'on-surface-variant': '#44474E',
         primary: {
-          DEFAULT: '#00668B',
+          DEFAULT: '#0284c7',
+          dark: '#0369a1',
+          light: '#e0f2fe',
           container: '#C2E8FF',
           'on-container': '#001E2C',
         },
