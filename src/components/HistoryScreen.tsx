@@ -1,18 +1,30 @@
 import React from 'react';
 import { SymptomLog } from '../types';
 import { deleteSymptomLog } from '../db/localDB';
-import { Calendar, Trash2, FileText, Wind, AlertCircle } from 'lucide-react';
+import { SymptomTempChart } from './SymptomTempChart';
+import { 
+  Calendar, 
+  Trash2, 
+  FileText, 
+  Wind, 
+  AlertCircle, 
+  Sun, 
+  Droplets,
+  MapPin
+} from 'lucide-react';
 
 interface HistoryScreenProps {
   logs: SymptomLog[];
   onOpenDoctorReport: () => void;
   onDeleteLog: (id: string) => void;
+  baselinePEF?: number;
 }
 
 export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   logs,
   onOpenDoctorReport,
   onDeleteLog,
+  baselinePEF = 480,
 }) => {
   const handleDelete = async (id: string) => {
     if (window.confirm('¿Deseas eliminar este registro clínico de la base de datos local?')) {
@@ -38,7 +50,12 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         </button>
       </div>
 
-      {/* Lista de Registros */}
+      {/* Gráficos del historial de temperatura y síntomas diarios */}
+      {logs.length > 0 && (
+        <SymptomTempChart logs={logs} baselinePEF={baselinePEF} />
+      )}
+
+      {/* Lista de Registros Cronológicos */}
       {logs.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center space-y-3">
           <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
@@ -51,11 +68,16 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">
+            Detalle de Mediciones Anteriores
+          </h2>
+
           {logs.map((log) => {
             const date = new Date(log.timestamp);
             const dateFormatted = date.toLocaleDateString('es-ES', {
               day: '2-digit',
               month: 'short',
+              year: 'numeric',
               hour: '2-digit',
               minute: '2-digit',
             });
@@ -73,7 +95,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                    <Calendar className="w-3.5 h-3.5" />
+                    <Calendar className="w-3.5 h-3.5 text-sky-600" />
                     <span>{dateFormatted}</span>
                   </div>
                   <button
@@ -86,10 +108,29 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                 </div>
 
                 <div className="flex items-baseline justify-between mb-2">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black text-slate-900">{log.pef}</span>
-                    <span className="text-xs text-slate-500">L/min</span>
+                  <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-black text-slate-900">{log.pef}</span>
+                      <span className="text-xs text-slate-500 font-medium">L/min</span>
+                    </div>
+
+                    {/* Temperatura registrada */}
+                    {log.temperature !== undefined && (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                        <Sun className="w-3 h-3 text-amber-500" />
+                        {log.temperature} °C
+                      </span>
+                    )}
+
+                    {/* Humedad */}
+                    {log.humidity !== undefined && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md">
+                        <Droplets className="w-3 h-3 text-sky-500" />
+                        {log.humidity}%
+                      </span>
+                    )}
                   </div>
+
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full capitalize ${
                     log.zone === 'green' ? 'bg-emerald-50 text-emerald-700' :
                     log.zone === 'yellow' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
@@ -117,7 +158,12 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                 {/* Rescate o notas */}
                 <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-50">
                   <span>Puffs de rescate: <strong>{log.rescuePuffs}</strong></span>
-                  {log.notes && <span className="italic truncate max-w-[150px]">{log.notes}</span>}
+                  {log.location && (
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {log.location.split(',')[0]}
+                    </span>
+                  )}
+                  {log.notes && <span className="italic truncate max-w-[140px] text-slate-600">"{log.notes}"</span>}
                 </div>
               </div>
             );

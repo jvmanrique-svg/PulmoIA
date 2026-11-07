@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SymptomLog, TabType, AsthmaZone, SymptomSeverity } from '../types';
+import { SymptomLog, TabType, AsthmaZone, SymptomSeverity, EnvironmentalData } from '../types';
 import { saveSymptomLog, calculateAsthmaZone } from '../db/localDB';
 import { 
   Wind, 
@@ -12,12 +12,16 @@ import {
   Plus, 
   Minus,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Sun,
+  Droplets,
+  MapPin
 } from 'lucide-react';
 
 interface RegisterScreenProps {
   onSaveLog: (newLog: SymptomLog) => void;
   onNavigate: (tab: TabType) => void;
+  currentEnvironment?: EnvironmentalData;
 }
 
 const COMMON_SYMPTOMS = [
@@ -40,7 +44,11 @@ const COMMON_TRIGGERS = [
   'Infección o resfriado'
 ];
 
-export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNavigate }) => {
+export const RegisterScreen: React.FC<RegisterScreenProps> = ({ 
+  onSaveLog, 
+  onNavigate,
+  currentEnvironment 
+}) => {
   // Estado del formulario
   const [pefValue, setPefValue] = useState<number>(440);
   const [severity, setSeverity] = useState<SymptomSeverity>('none');
@@ -49,7 +57,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
   const [rescuePuffs, setRescuePuffs] = useState<number>(0);
   const [medicationTaken, setMedicationTaken] = useState<boolean>(true);
   const [notes, setNotes] = useState<string>('');
-  
+
+  // Parámetros climáticos asociados a la medición
+  const [recordedTemp, setRecordedTemp] = useState<number>(currentEnvironment?.temperature ?? 21);
+  const [recordedHumidity, setRecordedHumidity] = useState<number>(currentEnvironment?.humidity ?? 60);
+
   // Feedback y confirmación
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
@@ -115,6 +127,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
       triggers: selectedTriggers,
       rescuePuffs,
       medicationTaken,
+      temperature: recordedTemp,
+      humidity: recordedHumidity,
+      aqi: currentEnvironment?.aqi,
+      uvIndex: currentEnvironment?.uvIndex,
+      location: currentEnvironment?.city,
       notes: notes.trim() ? notes.trim() : undefined,
     };
 
@@ -142,11 +159,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
       <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
-            <Activity className="w-5 h-5 text-primary" />
+            <Activity className="w-5 h-5 text-sky-600" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">Nuevo Registro Clínico</h1>
-            <p className="text-xs text-slate-500">Registra tus parámetros respiratorios y síntomas de hoy</p>
+            <p className="text-xs text-slate-500">Registra tus parámetros respiratorios, temperatura y síntomas</p>
           </div>
         </div>
       </div>
@@ -156,8 +173,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
         <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Wind className="w-5 h-5 text-primary" />
-              <label htmlFor="pef-slider" className="font-semibold text-slate-800 text-sm">Flujo Espiratorio Máximo (PEF)</label>
+              <Wind className="w-5 h-5 text-sky-600" />
+              <label htmlFor="pef-slider" className="font-semibold text-slate-800 text-sm">
+                Flujo Espiratorio Máximo (PEF)
+              </label>
             </div>
             <span className="text-2xl font-black text-slate-900 tracking-tight">
               {pefValue} <span className="text-xs font-medium text-slate-500">L/min</span>
@@ -183,21 +202,21 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
               step={5}
               value={pefValue}
               onChange={(e) => setPefValue(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600"
             />
             <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
               <span>100 L/min</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setPefValue(v => Math.max(100, v - 10))}
+                  onClick={() => setPefValue((v) => Math.max(100, v - 10))}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <Minus className="w-3 h-3" /> -10
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPefValue(v => Math.min(700, v + 10))}
+                  onClick={() => setPefValue((v) => Math.min(700, v + 10))}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <Plus className="w-3 h-3" /> +10
@@ -208,7 +227,73 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
           </div>
         </section>
 
-        {/* 2. Nivel de Severidad de Síntomas */}
+        {/* 2. Registro de Temperatura y Condiciones Ambientales */}
+        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sun className="w-5 h-5 text-amber-500" />
+              <label className="font-semibold text-slate-800 text-sm">
+                Clima y Temperatura Registrada
+              </label>
+            </div>
+            {currentEnvironment?.city && (
+              <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-sky-600" />
+                {currentEnvironment.city.split(',')[0]}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                <Sun className="w-3.5 h-3.5 text-amber-500" /> Temperatura actual
+              </span>
+              <div className="flex items-center justify-between mt-2">
+                <button
+                  type="button"
+                  onClick={() => setRecordedTemp((t) => t - 1)}
+                  className="w-7 h-7 bg-white rounded-lg border border-slate-200 font-bold text-xs"
+                >
+                  -
+                </button>
+                <span className="font-extrabold text-base text-slate-800">{recordedTemp} °C</span>
+                <button
+                  type="button"
+                  onClick={() => setRecordedTemp((t) => t + 1)}
+                  className="w-7 h-7 bg-white rounded-lg border border-slate-200 font-bold text-xs"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                <Droplets className="w-3.5 h-3.5 text-sky-500" /> Humedad relativa
+              </span>
+              <div className="flex items-center justify-between mt-2">
+                <button
+                  type="button"
+                  onClick={() => setRecordedHumidity((h) => Math.max(10, h - 5))}
+                  className="w-7 h-7 bg-white rounded-lg border border-slate-200 font-bold text-xs"
+                >
+                  -
+                </button>
+                <span className="font-extrabold text-base text-slate-800">{recordedHumidity}%</span>
+                <button
+                  type="button"
+                  onClick={() => setRecordedHumidity((h) => Math.min(100, h + 5))}
+                  className="w-7 h-7 bg-white rounded-lg border border-slate-200 font-bold text-xs"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. Nivel de Severidad de Síntomas */}
         <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
           <label className="font-semibold text-slate-800 text-sm block">Severidad general en el día</label>
           <div className="grid grid-cols-2 gap-2">
@@ -217,14 +302,14 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
               { id: 'mild', label: 'Leve', desc: 'Actividades normales' },
               { id: 'moderate', label: 'Moderada', desc: 'Dificultad ligera' },
               { id: 'severe', label: 'Severa', desc: 'Interfiere con reposo' }
-            ].map(item => (
+            ].map((item) => (
               <button
                 type="button"
                 key={item.id}
                 onClick={() => setSeverity(item.id as SymptomSeverity)}
                 className={`p-3 rounded-xl border text-left transition-all ${
                   severity === item.id
-                    ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary'
+                    ? 'border-sky-600 bg-sky-50 text-sky-800 ring-1 ring-sky-600'
                     : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
                 }`}
               >
@@ -235,7 +320,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
           </div>
         </section>
 
-        {/* 3. Síntomas Presentes */}
+        {/* 4. Síntomas Presentes */}
         <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
           <label className="font-semibold text-slate-800 text-sm block">Síntomas específicos identificados</label>
           <div className="flex flex-wrap gap-2">
@@ -248,7 +333,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
                   onClick={() => toggleSymptom(symptom)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     isSelected
-                      ? 'bg-primary text-white shadow-sm'
+                      ? 'bg-sky-600 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
@@ -259,7 +344,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
           </div>
         </section>
 
-        {/* 4. Desencadenantes Detectados */}
+        {/* 5. Desencadenantes Detectados */}
         <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
           <label className="font-semibold text-slate-800 text-sm block">Desencadenantes ambientales / actividad</label>
           <div className="flex flex-wrap gap-2">
@@ -283,10 +368,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
           </div>
         </section>
 
-        {/* 5. Medicación Administrada */}
+        {/* 6. Medicación Administrada */}
         <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
           <div className="flex items-center gap-2">
-            <Pill className="w-5 h-5 text-primary" />
+            <Pill className="w-5 h-5 text-sky-600" />
             <h2 className="font-semibold text-slate-800 text-sm">Control de Medicación</h2>
           </div>
 
@@ -298,7 +383,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setRescuePuffs(v => Math.max(0, v - 1))}
+                onClick={() => setRescuePuffs((v) => Math.max(0, v - 1))}
                 className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100"
               >
                 -
@@ -306,7 +391,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
               <span className="w-6 text-center font-bold text-sm text-slate-800">{rescuePuffs}</span>
               <button
                 type="button"
-                onClick={() => setRescuePuffs(v => v + 1)}
+                onClick={() => setRescuePuffs((v) => v + 1)}
                 className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100"
               >
                 +
@@ -317,29 +402,31 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
           <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
             <div>
               <p className="text-xs font-semibold text-slate-800">Dosis de Mantenimiento Diaria</p>
-              <p className="text-[11px] text-slate-500">Budesonida/Formoterol administrada a tiempo</p>
+              <p className="text-[11px] text-slate-500">Inhalador de control tomado según prescripción</p>
             </div>
             <input
               type="checkbox"
               checked={medicationTaken}
               onChange={(e) => setMedicationTaken(e.target.checked)}
-              className="w-5 h-5 accent-primary rounded cursor-pointer"
+              className="w-5 h-5 accent-sky-600 rounded cursor-pointer"
             />
           </label>
         </section>
 
-        {/* 6. Observaciones y Notas */}
+        {/* 7. Observaciones y Notas */}
         <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-2">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-slate-500" />
-            <label htmlFor="notes-field" className="font-semibold text-slate-800 text-sm">Notas adicionales para tu médico</label>
+            <label htmlFor="notes-field" className="font-semibold text-slate-800 text-sm">
+              Notas adicionales para tu médico
+            </label>
           </div>
           <textarea
             id="notes-field"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Escribe sensaciones adicionales, respuesta a la medicación o eventos particulares..."
-            className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-none h-20"
+            className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-500 resize-none h-20"
           />
         </section>
 
@@ -348,7 +435,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-2xl shadow-lg shadow-primary/20 flex items-center justify-center gap-2 active:scale-[0.99] transition-all disabled:opacity-50"
+            className="w-full py-4 px-6 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2 active:scale-[0.99] transition-all disabled:opacity-50"
           >
             {isSubmitting ? (
               <span>Guardando en base de datos local...</span>
@@ -362,11 +449,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
         </div>
       </form>
 
-      {/* Modal / Alerta de Confirmación interactiva */}
+      {/* Modal de Confirmación */}
       {showSuccessModal && savedRecord && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-            {/* Ícono de éxito */}
             <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-4">
               <CheckCircle2 className="w-9 h-9" />
             </div>
@@ -375,10 +461,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
               ¡Registro Guardado con Éxito!
             </h3>
             <p className="text-xs text-center text-slate-500 mb-5">
-              Los datos se han persistido correctamente en la base de datos local (IndexedDB + Storage).
+              Los datos clínicos y ambientales se han persistido correctamente.
             </p>
 
-            {/* Resumen Clínico */}
             <div className="bg-slate-50 rounded-2xl p-4 space-y-2 mb-6 border border-slate-100 text-xs">
               <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
                 <span className="text-slate-500">Flujo PEF registrado:</span>
@@ -394,6 +479,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
                 </span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                <span className="text-slate-500">Temperatura registrada:</span>
+                <span className="font-semibold text-slate-800">{savedRecord.temperature} °C</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
                 <span className="text-slate-500">Severidad de síntomas:</span>
                 <span className="font-semibold text-slate-800 capitalize">{savedRecord.severity}</span>
               </div>
@@ -403,7 +492,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
               </div>
             </div>
 
-            {/* Acciones */}
             <div className="space-y-2">
               <button
                 type="button"
@@ -411,9 +499,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSaveLog, onNav
                   setShowSuccessModal(false);
                   onNavigate('historial');
                 }}
-                className="w-full py-3 bg-primary text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
+                className="w-full py-3 bg-sky-600 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-sky-700 transition-colors"
               >
-                <span>Ver en Historial Clínico</span>
+                <span>Ver en Historial y Gráficas</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               

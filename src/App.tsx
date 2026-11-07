@@ -4,7 +4,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { TabType, SymptomLog, PatientProfile, EnvironmentalData } from './types';
+import { 
+  TabType, 
+  SymptomLog, 
+  PatientProfile, 
+  EnvironmentalData, 
+  AuthUser,
+  Medication 
+} from './types';
 import { INITIAL_PATIENT, INITIAL_LOGS, INITIAL_ENVIRONMENT } from './data/mockData';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -16,11 +23,24 @@ import { DoctorReportModal } from './components/DoctorReportModal';
 import { ProfileModal } from './components/ProfileModal';
 import { EmergencyModal } from './components/EmergencyModal';
 import { BreathingModal } from './components/BreathingModal';
+import { MedicationManagerModal } from './components/MedicationManagerModal';
+import { AuthScreen } from './components/AuthScreen';
+import { fetchLiveWeatherByCity } from './services/weatherService';
 
 export default function App() {
+  // Estado de Autenticación (Login & Signup)
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    try {
+      const savedUser = localStorage.getItem('pulmo_auth_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [activeTab, setActiveTab] = useState<TabType>('inicio');
 
-  // Stored state with local storage persistence
+  // Estado del Paciente con persistencia en localStorage
   const [patient, setPatient] = useState<PatientProfile>(() => {
     try {
       const saved = localStorage.getItem('pulmo_patient');
@@ -30,6 +50,7 @@ export default function App() {
     }
   });
 
+  // Historial de síntomas clínicos
   const [logs, setLogs] = useState<SymptomLog[]>(() => {
     try {
       const saved = localStorage.getItem('pulmo_logs');
@@ -39,8 +60,17 @@ export default function App() {
     }
   });
 
-  const [environment] = useState<EnvironmentalData>(INITIAL_ENVIRONMENT);
+  // Datos ambientales (Clima, Humedad, AQI, UV, Alertas)
+  const [environment, setEnvironment] = useState<EnvironmentalData>(() => {
+    try {
+      const saved = localStorage.getItem('pulmo_environment');
+      return saved ? JSON.parse(saved) : INITIAL_ENVIRONMENT;
+    } catch {
+      return INITIAL_ENVIRONMENT;
+    }
+  });
 
+  // Preguntas para la consulta médica
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('pulmo_questions');
@@ -55,28 +85,58 @@ export default function App() {
     }
   });
 
-  // Modal visibility states
+  // Modales
   const [isDoctorReportOpen, setIsDoctorReportOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
   const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
   const [isBreathingOpen, setIsBreathingOpen] = useState<boolean>(false);
+  const [isMedicationManagerOpen, setIsMedicationManagerOpen] = useState<boolean>(false);
 
-  // Sync to local storage
+  // Sincronizaciones con localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('pulmo_patient', JSON.stringify(patient));
+    } catch {
+      // storage unavailable
+    }
+  }, [patient]);
+
   useEffect(() => {
     try {
       localStorage.setItem('pulmo_logs', JSON.stringify(logs));
     } catch {
-      // Storage unavailable
+      // storage unavailable
     }
   }, [logs]);
 
   useEffect(() => {
     try {
+      localStorage.setItem('pulmo_environment', JSON.stringify(environment));
+    } catch {
+      // storage unavailable
+    }
+  }, [environment]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem('pulmo_questions', JSON.stringify(selectedQuestions));
     } catch {
-      // Storage unavailable
+      // storage unavailable
     }
   }, [selectedQuestions]);
+
+  // Actualización de clima inicial en segundo plano si la red está disponible
+  useEffect(() => {
+    if (environment.city) {
+      fetchLiveWeatherByCity(environment.city.split(',')[0])
+        .then((freshData) => {
+          setEnvironment(freshData);
+        })
+        .catch(() => {
+          // Continúa con los datos previos sin interrumpir la app
+        });
+    }
+  }, []);
 
   const handleSaveLog = (newLog: SymptomLog) => {
     setLogs((prev) => [newLog, ...prev]);
@@ -92,25 +152,71 @@ export default function App() {
     );
   };
 
+  const handleSaveMedications = (meds: Medication[]) => {
+    setPatient((prev) => ({
+      ...prev,
+      currentMedications: meds,
+    }));
+  };
+
+  const handleUpdatePatient = (updated: PatientProfile) => {
+    setPatient(updated);
+  };
+
+  const handleLoginSuccess = (user: AuthUser, initialProfile?: Partial<PatientProfile>) => {
+    setCurrentUser(user);
+    if (initialProfile) {
+      setPatient((prev) => {
+        const merged: PatientProfile = {
+          ...prev,
+          name: initialProfile.name || prev.name,
+          phone: initialProfile.phone || prev.phone,
+          nationality: initialProfile.nationality || prev.nationality,
+          asthmaType: initialProfile.asthmaType || prev.asthmaType,
+          age: initialProfile.age || prev.age,
+          email: initialProfile.email || prev.email,
+        };
+        try {
+          localStorage.setItem('pulmo_patient', JSON.stringify(merged));
+        } catch {}
+        return merged;
+      });
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('pulmo_auth_user');
+    setCurrentUser(null);
+    setActiveTab('inicio');
+  };
+
+  // Si no está autenticado, muestra la Pantalla de Autenticación (Login / Signup)
+  if (!currentUser) {
+    return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
-    <div className="min-h-screen bg-background font-body-md text-body-md text-on-surface antialiased flex flex-col justify-between selection:bg-secondary-fixed selection:text-on-secondary-fixed">
-      {/* Top Header */}
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased flex flex-col justify-between selection:bg-sky-100 selection:text-sky-900">
+      {/* Barra Superior */}
       <Header
         patient={patient}
         onOpenProfile={() => setIsProfileOpen(true)}
         onNavigateHome={() => setActiveTab('inicio')}
+        onLogout={handleLogout}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative w-full max-w-md mx-auto px-gutter pt-18 pb-28">
+      {/* Área Principal de Contenido */}
+      <main className="flex-1 flex flex-col relative w-full max-w-md mx-auto px-4 pt-20 pb-24">
         {activeTab === 'inicio' && (
           <HomeScreen
             patient={patient}
             logs={logs}
             environment={environment}
+            onUpdateEnvironment={setEnvironment}
             onNavigate={(tab) => setActiveTab(tab)}
             onOpenBreathing={() => setIsBreathingOpen(true)}
             onOpenEmergency={() => setIsEmergencyOpen(true)}
+            onOpenMedicationManager={() => setIsMedicationManagerOpen(true)}
           />
         )}
 
@@ -118,6 +224,7 @@ export default function App() {
           <RegisterScreen
             onSaveLog={handleSaveLog}
             onNavigate={(tab) => setActiveTab(tab)}
+            currentEnvironment={environment}
           />
         )}
 
@@ -126,6 +233,7 @@ export default function App() {
             logs={logs}
             onOpenDoctorReport={() => setIsDoctorReportOpen(true)}
             onDeleteLog={handleDeleteLog}
+            baselinePEF={patient.baselinePEF}
           />
         )}
 
@@ -139,10 +247,10 @@ export default function App() {
         )}
       </main>
 
-      {/* Fixed Bottom Navigation */}
+      {/* Barra de Navegación Inferior Fija */}
       <BottomNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab)} />
 
-      {/* Global Interactive Overlays */}
+      {/* Modales y Capas Interactivas */}
       <DoctorReportModal
         isOpen={isDoctorReportOpen}
         onClose={() => setIsDoctorReportOpen(false)}
@@ -155,8 +263,17 @@ export default function App() {
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
         patient={patient}
+        onUpdatePatient={handleUpdatePatient}
         onOpenDoctorReport={() => setIsDoctorReportOpen(true)}
         onOpenEmergency={() => setIsEmergencyOpen(true)}
+        onLogout={handleLogout}
+      />
+
+      <MedicationManagerModal
+        isOpen={isMedicationManagerOpen}
+        onClose={() => setIsMedicationManagerOpen(false)}
+        medications={patient.currentMedications}
+        onSaveMedications={handleSaveMedications}
       />
 
       <EmergencyModal
